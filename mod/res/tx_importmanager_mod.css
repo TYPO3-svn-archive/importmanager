@@ -1,0 +1,28 @@
+/**
+ *	StyleSheet for importmanager
+ */
+ 
+table#typo3-tmpltable {
+	width: 100%;
+	margin: 25px 0;
+}
+
+table#typo3-tmpltable th {
+	font-size: 12px;
+	font-weight: bold;	
+	padding: 5px;
+}
+
+table#typo3-tmpltable td {
+	border-top: 1px solid #888;
+	border-collapse: collapse;
+ 	padding: 5px;
+}
+
+div.warningbox h3, div.warningbox h4  {
+	background: yellow;
+}
+
+div.warningbox p.noadmin {
+	color: red;
+}

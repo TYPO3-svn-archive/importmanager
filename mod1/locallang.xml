@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>module</type>
+		<description>Language labels for module &quot;web_tximportmanagerM1&quot;</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="ExtTitle">Import Manager</label>
+			<label index="ExtNoPermission">You habe no permissions for this extension!</label>
+			<label index="ExtFunction1">Upload</label>
+			<label index="ExtFunction2">Options</label>
+			<label index="ExtFunction3">Mapping</label>
+			<label index="ExtImportantNotice">Important notice</label>
+			<label index="UploadStep1Title">Step 1: Upload</label>
+			<label index="UploadStep1Description">Please select the import files to upload.</label>
+			<label index="UploadStep1NoMappingsAvaible">No mappings avaible, mappings are required for the import.</label>
+			<label index="UploadStep1NoMappingsAvaibleAndNoAdmin">If you get this message please inform your site administrator.</label>
+			<label index="UploadStep1CSVTemplateLink">Download CSV Template</label>
+			<label index="UploadStep1Upload">Upload &amp; import</label>
+			<label index="UploadStep2Title">Step 2: Import</label>
+			<label index="UploadStep2UploadNotSuccessfull">No files uploaded.</label>
+			<label index="UploadStep2InfoTitle">Import of:</label>
+			<label index="UploadStep2InfoTable">Table:</label>
+			<label index="UploadStep2InfoKeys">Keys:</label>
+			<label index="UploadStep2InfoFilePath">Import-File:</label>
+			<label index="UploadStep2InfoInserts">Inserts:</label>
+			<label index="UploadStep2InfoUpdates">Updates:</label>
+			<label index="MappingStep1Title">Step 1: Chosse database</label>
+			<label index="MappingStep1Description">Please choose a databasetable for mapping.</label>
+			<label index="MappingStep1DBTableWithMap">Databasetables with maps</label>
+			<label index="MappingStep1DBTableWithoutMap">Databasetables without maps</label>
+			<label index="MappingStep2Title">Step 2: Mapping for</label>
+			<label index="MappingStep2Description"></label>
+			<label index="MappingStep2MapType0">Default</label>
+			<label index="MappingStep2MapType1">CSV-Field</label>
+			<label index="MappingStep2MapType2">Function</label>
+			<label index="MappingStep2MapType3">Text</label>
+			<label index="MappingStep2DatabaseTitel">Database Title:</label>
+			<label index="MappingStep2DatabaseDescription">Database Description:</label>
+			<label index="MappingStep2DeleteDescription">If you want to delete the databasetable mapping check the box and click "Save mapping"!</label>
+			<label index="MappingStep2Delete">Delete mapping</label>
+			<label index="MappingStep2Save">Save mapping</label>
+			<label index="MappingStep3SaveSuccessful">Mapping successful saved.</label>
+			<label index="MappingStep3UpdateSuccessful">Mapping successful updated.</label>
+			<label index="MappingStep3DeleteSuccessful">Mapping successful deleted.</label>
+			<label index="Next">Next</label>
+			<label index="Back">Back</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="ExtTitle">Import Manager</label>
+			<label index="ExtNoPermission">Sie haben keine Berechtigung diese Extension zu benutzen!</label>
+			<label index="ExtFunction1">Hochladen</label>
+			<label index="ExtFunction2">Einstellungen</label>
+			<label index="ExtFunction3">Mapping</label>
+			<label index="ExtImportantNotice">Wichtiger Hinweis</label>
+			<label index="UploadStep1Title">Schritt 1: Hochladen</label>
+			<label index="UploadStep1Description">Bitte wählen Sie hier Ihre zu importierenden Dateien aus.</label>
+			<label index="UploadStep1NoMappingsAvaible">Es wurden keine Mappings gefunden, diese werden benötigt um einen Import durchführen zu können.</label>
+			<label index="UploadStep1NoMappingsAvaibleAndNoAdmin">Wenn Sie diesen Hinweiss bekommen nehmen Sie bitte Kontakt mit Ihrme Administrator dieser Webseite auf.</label>
+			<label index="UploadStep1CSVTemplateLink">CSV Template herrunterladen</label>
+			<label index="UploadStep1Upload">Hochladen &amp; Importieren</label>
+			<label index="UploadStep2Title">Schritt 2: Import</label>
+			<label index="UploadStep2UploadNotSuccessfull">Es wurde keine Dateien hochgeladen.</label>
+			<label index="UploadStep2InfoTitle">Import von:</label>
+			<label index="UploadStep2InfoTable">Tabelle:</label>
+			<label index="UploadStep2InfoKeys">Keys:</label>
+			<label index="UploadStep2InfoFilePath">Import-Datei:</label>
+			<label index="UploadStep2InfoInserts">Inserts:</label>
+			<label index="UploadStep2InfoUpdates">Updates:</label>
+			<label index="MappingStep1Title">Schritt 1: Datenbank auswählen</label>
+			<label index="MappingStep1Description">Wählen Sie bitte die Datenbank-Tabelle aus für die Sie eine Mapping erstellen wollen.</label>
+			<label index="MappingStep1DBTableWithMap">Datenbanktabellen mit Maps</label>
+			<label index="MappingStep1DBTableWithoutMap">Datenbanktabellen ohne Maps</label>
+			<label index="MappingStep2Title">Schritt 2: Mapping für</label>
+			<label index="MappingStep2Description">Wenn Sie hier das häckchen aktivieren wird das Mapping für diese Tabelle gelöscht!</label>
+			<label index="MappingStep2MapType0">Default</label>
+			<label index="MappingStep2MapType1">CSV-Feld</label>
+			<label index="MappingStep2MapType2">Funktion</label>
+			<label index="MappingStep2MapType3">Text</label>
+			<label index="MappingStep2DatabaseTitel">Datenbank Titel:</label>
+			<label index="MappingStep2DatabaseDescription">Datenbank Beschreibung:</label>
+			<label index="MappingStep2DeleteDescription">Wenn Sie hier das häckchen aktivieren wird das Mapping nach dem klick auf "Mapping speichern" für diese Tabelle gelöscht!</label>
+			<label index="MappingStep2Delete">Mapping löschen</label>
+			<label index="MappingStep2Save">Mapping speichern</label>
+			<label index="MappingStep3SaveSuccessful">Mapping erfolgreich gespeichert.</label>
+			<label index="MappingStep3UpdateSuccessful">Mapping erfolgreich geupdated.</label>
+			<label index="MappingStep3DeleteSuccessful">Mapping erfolgreich gelöscht.</label>
+			<label index="Next">Weiter</label>
+			<label index="Back">Zurück</label>
+		</languageKey>
+	</data>
+</T3locallang>

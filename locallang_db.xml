@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+    <meta type="array">
+        <type>database</type>
+        <description>Language labels for database tables/fields belonging to extension 'importmanager'</description>
+    </meta>
+    <data type="array">
+        <languageKey index="default" type="array">
+            <label index="tx_importmanager_mapping">Mapping</label>
+            <label index="tx_importmanager_mapping.dbtable">Databasetable</label>
+            <label index="tx_importmanager_mapping.dbtitle">Title</label>
+            <label index="tx_importmanager_mapping.dbdescription">Description</label>
+            <label index="tx_importmanager_mapping.dbmapping">Mapping</label>
+        </languageKey>
+        <languageKey index="de" type="array">
+            <label index="tx_importmanager_mapping">Mapping</label>
+            <label index="tx_importmanager_mapping.dbtable">Datenbanktabelle</label>
+            <label index="tx_importmanager_mapping.dbtitle">Titel</label>
+            <label index="tx_importmanager_mapping.dbdescription">Beschreibung</label>
+            <label index="tx_importmanager_mapping.mapping">Mapping</label>
+        </languageKey>
+    </data>
+</T3locallang>

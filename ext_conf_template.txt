@@ -1,0 +1,17 @@
+# cat=basic//; type=string; label=Field Delimiter: Felder sind durch folgendes Zeichen getrennt.
+	fieldDelimiter = ;
+	
+# cat=basic//; type=string; label=Field Encaps: Felder escaped durch folgendes Zeichen.
+	fieldEncaps = "
+	
+# cat=basic//; type=boolean; label=CSV has Title: CSV Dateien haben in der ersten Zeile die Feldnamen.
+	CSVhasTitle = TRUE
+	
+# cat=basic//; type=string; label=Import Format: Erlaubte Import Formate, bisher geht nur *.CSV.
+	importFormats = csv
+	
+# cat=basic//; type=string; label=Database Charset: Hier bitte die Kodierung angeben mit der TYPO3 und die Datenbank läuft.
+	dbCharset = utf-8
+	
+# cat=basic//; type=string; label=Import Charset: Hier bitte die Kodierung angeben in der die Import-Dateien kodiert sind.
+	fileCharset = iso-8859-1
