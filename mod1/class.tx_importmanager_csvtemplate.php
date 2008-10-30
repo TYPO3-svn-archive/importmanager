@@ -41,9 +41,9 @@ $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users
 /**
  * Class for the csv template download.
  *
- * @author	Pascal Hinz <hinz@elemente.ms>
- * @package	TYPO3
- * @subpackage	tx_importmanager
+ * @author Pascal Hinz <hinz@elemente.ms>
+ * @package TYPO3
+ * @subpackage tx_importmanager
  */
 class tx_importmanager_csvtemplate extends t3lib_SCbase  {
 	var $pageinfo;
@@ -51,21 +51,19 @@ class tx_importmanager_csvtemplate extends t3lib_SCbase  {
 	
 	/**
 	 * Initializes the Module
+	 * 
 	 * @return	void
 	 */
 	function init()	{
 		global $BE_USER,$LANG,$BACK_PATH,$TCA_DESCR,$TCA,$CLIENT,$TYPO3_CONF_VARS;
-
 		parent::init();
-		
 	}
 	
 	
 	/**
-	 * Main function of the module. Write the content to $this->content
-	 * If you chose "web" as main module, you will need to consider the $this->id parameter which will contain the uid-number of the page clicked in the page tree
-	 *
-	 * @return	[type]		...
+	 * Build CSV and send it as header to you.
+	 * 
+	 * @return void
 	 */
 	function main()	{
 		global $BE_USER,$LANG,$BACK_PATH,$TCA_DESCR,$TCA,$CLIENT,$TYPO3_CONF_VARS;
@@ -95,13 +93,15 @@ class tx_importmanager_csvtemplate extends t3lib_SCbase  {
 					}
 				}
 
-				// Datensätze wieder zurück codieren!
+				// Convert data into file charset
 				$t3lib_cs = t3lib_div::makeInstance("t3lib_cs");
 				$t3lib_cs->convArray($CSV_COLUMNS,$c['dbCharset'],$c['fileCharset']);
 				
+				// Build CSV file
 				$CSV_FILE = $t3lib_svbase->writeFile(implode($c['fieldDelimiter'],$CSV_COLUMNS),PATH_site.'uploads/tx_importmanager/'.$row['dbtable'].'.csv');
 				$CSV_INFO = $t3lib_basicFileFunctions->getTotalFileInfo($CSV_FILE);
 				
+				// Build header for download
 				header('Content-Description: File Transfer'); 
 				header('Content-Disposition: attachment; filename="'.$CSV_INFO['filebody'].'-'.time().'.csv"');
 				header('Content-type: text/'.$CSV_INFO['fileext'].'; charset='.$c['fileCharset']);
@@ -127,6 +127,7 @@ $SOBE->init();
 // Include files?
 foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
 
+// Run it
 $SOBE->main();
 
 ?>

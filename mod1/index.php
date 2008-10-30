@@ -403,6 +403,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 			} elseif($piVars['action']=='import') {
 				
 				// In work!
+				// Not included
 				$this->content.= 'Importiert!';
 				
 			}
@@ -411,8 +412,9 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		
 		
 		/**
-		 * Enter description here...
+		 * Menu function 2; Not included yet
 		 *
+		 * @return void
 		 */
 		function menuFunction2() {
 			$content='<div align=center><strong>Diese Funktion ist noch nicht implementiert.</strong></div>';
@@ -421,8 +423,9 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		
 		
 		/**
-		 * Enter description here...
+		 * Menu function 3; Build the steps for mapping
 		 *
+		 * @return void
 		 */
 		function menuFunction3() {
 			
@@ -483,7 +486,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$this->doc->table_TABLE.= '<th>MapType</th><th>Mapping</th></tr>';
 				foreach ($_FIELDS_ as $_KEY_ => $_VALUE_) {
 					$_FIELDS_[$_KEY_]['MapType'] = '<select name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][MapType]" id="tx_importmanager-select-'.$_COUNTER_.'" onchange="this.parentNode.parentNode.style.background=this.options[this.selectedIndex].style.background;">'.$_MAPTYPE_.'</select>';
-              if(!empty($row)) {
+				if(!empty($row)) {
 						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').selectedIndex='.(($ser_arr[$_KEY_]['MapType'])?$ser_arr[$_KEY_]['MapType']:0).';';						
 						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').onchange();';						
 					}
@@ -731,9 +734,9 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		 * Erzeugt ein hidden Feld Formular in dem die Action des
 		 * abgesendeten Formulars für die Extension definiert wird.
 		 *
-		 * @author 			Pascal Hinz <hinz (at) elemente dot ms>
-		 * @param 	string 	$action
-		 * @return 	string	hidden Formular Feld
+		 * @author Pascal Hinz <hinz (at) elemente dot ms>
+		 * @param string $action
+		 * @return string hidden Formular Feld
 		 */
 		function SetFormAction( $action ) {
 			return '<input type="hidden" name="tx_importmanager[action]" value="'.$action.'" />';
