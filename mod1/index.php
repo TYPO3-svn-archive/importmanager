@@ -625,43 +625,39 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		/**
 		 * Läd die Übergebenen Daten hoch und gibt sie anschließend zurück
 		 *
-		 * @todo 		Pascal Hinz: Diese Methode muss aufjedenfall nochmal überarbeitet werden!
 		 * @return Array mit den Dateinamen der hochgeladenen CSV dateien
 		 */
 		function CheckUpload() {
 			
-			global $FILEMOUNTS,$TYPO3_CONF_VARS,$BE_USER,$LANG;
+			global $FILEMOUNTS,$TYPO3_CONF_VARS,$BE_USER;
 			
+			$fileProcessor	= t3lib_div::makeInstance('t3lib_extFileFunctions');
+			$extConf 		= array(); 
+			$file 			= array();
+			$newFile		= array();
 			
-			// Nur CSV Dateien erlauben
-			$c = unserialize($TYPO3_CONF_VARS['EXT']['extConf']['importmanager']);
+			// Set allowed file extension for upload
+			$extConf = unserialize($TYPO3_CONF_VARS['EXT']['extConf']['importmanager']);
 			$TYPO3_CONF_VARS['BE']['fileExtensions'] = array (
-    			'webspace' => array('allow'=>$c['importFormats'], 'deny'=>'*'),
+    			'webspace' => array('allow'=>$extConf['importFormats'], 'deny'=>'*'),
 			);
 			
-			
-			// Hole alle Upload-Felder und setzte das TARGET
+			// Get all upload fields
 			$file = t3lib_div::_POST('tx_importmanager');
-			
-			
-			// Upload Einstellen
-			$fileProcessor = t3lib_div::makeInstance('t3lib_extFileFunctions');
+
+			// Upload settings
 			$fileProcessor->init($FILEMOUNTS, $TYPO3_CONF_VARS['BE']['fileExtensions']);
 			$fileProcessor->init_actionPerms($BE_USER->user['fileoper_perms']);
 			$fileProcessor->dontCheckForUnique = 1;
+			# $fileProcessor->maxUploadFileSize = 2000; // ext_conf_template::maxUploadFileSize?
 			
-			
-			// Upload ausführen
+			// Do uploading
 			$fileProcessor->start($file);
-			$newFile = array();
 			for ($i=0;$i<count($file['upload']);$i++) {
-				$file['upload'][$i]['target'] = t3lib_div::getFileAbsFileName('fileadmin/_temp_/');	
-				// Die File nur zurückgeben wenn auch wirklich eine datei hochgeladen wurde!					
+				$file['upload'][$i]['target'] = t3lib_div::getFileAbsFileName('fileadmin/_temp_/');						
 				$newFile[] = $fileProcessor->func_upload($file['upload'][$i], $i);
 			}
 			
-			
-			// Resultat zurückgeben
 			return $newFile;
 		}
 
