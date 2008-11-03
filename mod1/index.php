@@ -48,10 +48,10 @@ $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users
 class  tx_importmanager_module1 extends t3lib_SCbase {
 		var $pageinfo;
 
-		
+
 		/**
 		 * Initializes the Module
-		 * 
+		 *
 		 * @return void
 		 */
 		function init()	{
@@ -59,11 +59,11 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 			parent::init();
 		}
 
-		
+
 		/**
 		 * Adds items to the ->MOD_MENU array. Used for the function menu selector.
 		 * The menu is split into admin and editor sections.
-		 * 
+		 *
 		 * @return void
 		 */
 		function menuConfig()	{
@@ -81,12 +81,12 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				'function' => Array (
 					'1' => $LANG->getLL('ExtFunction1')
 				)
-			);	
+			);
 			}
 			parent::menuConfig();
 		}
 
-		
+
 		/**
 		 * Main function of the module. Write the content to $this->content
 		 * If you chose "web" as main module, you will need to consider the $this->id parameter which will contain the uid-number of the page clicked in the page tree
@@ -132,7 +132,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$this->content.=$this->doc->spacer(5);
 				$this->content.=$this->doc->section('',$this->doc->funcMenu($headerSection,t3lib_BEfunc::getFuncMenu($this->id,'SET[function]',$this->MOD_SETTINGS['function'],$this->MOD_MENU['function'])));
 				$this->content.=$this->doc->divider(5);
-				
+
 				// Render content:
 				if($BE_USER->user['admin']) {
 					$this->moduleContentForAdmin();
@@ -147,7 +147,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 
 				$this->content.=$this->doc->spacer(10);
 			} else {
-				
+
 				// If no access or if ID == zero
 				$this->doc = t3lib_div::makeInstance('bigDoc');
 				$this->doc->backPath = $BACK_PATH;
@@ -157,11 +157,11 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$this->content.=$this->doc->spacer(5);
 				$this->content.= '<p>'.$LANG->getLL('ExtNoPermission').'</p>';
 				$this->content.=$this->doc->spacer(10);
-				
+
 			}
 		}
 
-		
+
 		/**
 		 * Prints out the module HTML
 		 *
@@ -173,19 +173,19 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 			echo $this->content;
 		}
 
-		
+
 		/**
 		 * Generates the module content only for Administrators
 		 *
 		 * @return void
 		 */
 		function moduleContentForAdmin()	{
-			
+
 			global $LANG,$FILEMOUNTS,$TCA,$TYPO3_CONF_VARS;
-			
+
 			switch((string)$this->MOD_SETTINGS['function'])	{
 				case 1:
-					$this->menuFunction1();	
+					$this->menuFunction1();
 				break;
 				case 2:
 					$this->menuFunction2();
@@ -195,8 +195,8 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				break;
 			}
 		}
-		
-		
+
+
 		/**
 		 * Generates the module content only for Editors
 		 *
@@ -205,99 +205,152 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		function moduleContentForEditor() {
 			switch((string)$this->MOD_SETTINGS['function'])	{
 				case 1:
-					$this->menuFunction1();	
+					$this->menuFunction1();
 				break;
 			}
 		}
-		
-		
+
+		/**
+		 * Looks in an foreign table
+		 * for an parent-uid
+		 *
+		 * @return integer	The uid which has been found, false otherwise
+		 */
+		function lookupForRecord($value, $field = 'title', $table = 'tx_commerce_products', $getField = 'uid') {
+			if ('' == $value || '' == $field || '' == $table || '' == $getField) { return false; }
+			if (isset($this->cache[$table][$field][$value][$getField])) {
+				return $this->cache[$table][$field][$value][$getField];
+			}
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($GLOBALS['TYPO3_DB']->quoteStr($getField, $table),$table,$GLOBALS['TYPO3_DB']->quoteStr($field, $table).'="'.$GLOBALS['TYPO3_DB']->quoteStr($value, $table).'" AND hidden=0 AND deleted=0');
+			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+			if (0 == count($row)) {
+				$this->cache[$table][$field][$value][$getField] = false;
+				return false;
+			}
+			$this->cache[$table][$field][$value][$getField] = $row[$getField];
+			return $row[$getField];
+		}
+
+
 		/**
 		 * Menu function 1; Build the steps for upload and import.
-		 * 
+		 *
 		 * @return void
 		 */
 		function menuFunction1() {
-			
+
 			global $GLOBALS,$TYPO3_CONF_VARS,$LANG;
-			
+
 			// Init Block
 			$piVars = (array) t3lib_div::_POST('tx_importmanager');
 
 			// Switch Block
 			if(empty($piVars['action'])) {
-				
+
 				// Init action
 				$this->content.= $this->SetFormAction('upload');
-				
+
 				$content.= '<p>'.$LANG->getLL('UploadStep1Description').'</p>';
 				$content.= $this->BuildUploadForms();
 
 				$this->content.= $this->doc->section($LANG->getLL('UploadStep1Title'), $content, 0, 1);
-			
+
 			} elseif ($piVars['action']=='upload') {
-				
+
 				$this->content.= $this->SetFormAction('import');
 				$this->content.= $this->doc->section($LANG->getLL('UploadStep2Title'), '', 0, 1);
-				
+
 				$files = $this->CheckUpload();
-				
+
 				// Switch für die Files
 				if(!empty($files)) {
-					
+
 					// Init Block
 					$c = unserialize($TYPO3_CONF_VARS['EXT']['extConf']['importmanager']);
 					$mapper = t3lib_div::makeInstance("tx_rsuserimp");
 					$mapper->fieldDelimiter = $c['fieldDelimiter'];
 					$mapper->fieldEncaps = $c['fieldEncaps'];
 					$mapper->CSVhasTitle = $c['CSVhasTitle'] ? TRUE: FALSE;
-					
+
 					// Für jede Datei die hochgeladen wurde, wird diese Schleife durchlaufen
 					foreach ($files as $key => $value) {
 						// Nur ausführen wenn auch wirklich eine Datei im Temp ordner liegt
 						if(!empty($files[$key])) {
-							
+
 							// init für jedes File
 							$mapper->file = $value;
 							$mapper->init();
 							$mapper->CSV = $mapper->readCSV();
-							
 							// Ändern des getColumnsFromDB
 							$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,dbtitle,dbtable,dbmapping','tx_importmanager_mapping','uid='.$piVars['upload'][$key]['uid'].' AND hidden=0 AND deleted=0');
 							$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 							$map = unserialize($row['dbmapping']);
 							$mapper->columnNamesFromDB = $GLOBALS['TYPO3_DB']->admin_get_fields($row['dbtable']);
-							
-							// Für jedes Tabellenfeld wird geschaut welche Mapping Art 
-							// und das jeweilige Mapping hinzugefügt.
-							foreach ($mapper->columnNamesFromDB as $key => $value) {
-								// Mapping speichern
-								$reg = $map[$key]['Mapping'];
-								$counter = 0;
-								
-								// Für jede CSV Zeile muss ein import durchgeführt werden
-								foreach ($mapper->CSV as $content) {
-																				
+
+							$tmp = $mapper->columnNamesFromCSV;
+							$mapper->CSVcolumnToContent = array_flip($tmp);
+
+							$counter = 0;
+
+							// Für jede CSV Zeile muss ein import durchgeführt werden
+							foreach ($mapper->CSV as $content) {
+
+								$ignoreRecord = false; // some Records could be ignored by syntaxcheck etc
+								// Für jedes Tabellenfeld wird geschaut welche Mapping Art
+								// und das jeweilige Mapping hinzugefügt.
+								foreach ($mapper->columnNamesFromDB as $key => $value) {
+									// Mapping speichern
+									$reg = $map[$key]['Mapping'];
 									switch ($map[$key]['MapType']) {
 										// CSV-Feld
 										case 1:
 											$v[$counter][$key] = (string) $content[array_search($reg,$mapper->columnNamesFromCSV)];
 										break;
 										// Funktion
-										case 2:
-											// Erstmal ganz simple
-											$parsed = preg_replace('/\{(\w+)\}/e', '$content[array_search($1,$mapper->columnNamesFromCSV)]', $reg);
-											$v[$counter][$key] = (string) eval('return '.$parsed.';');
+										case 4:
+											$v[$counter][$key] = (string)22;
+											// Look up and find product uid with
+											// title =
+											// $mapper->CSVcolumnToContent[]
+
+/*
+t3lib_div::debug($content);
+t3lib_div::debug($mapper->columnNamesFromCSV);
+t3lib_div::debug($mapper->CSVcolumnToContent);
+*/
+// echo " $counter - $key - $value - $reg";
+
+											// $v[$counter][$key] =
+											$foreign = $this->lookupForRecord($content[$mapper->CSVcolumnToContent['Serie']], 'title', 'tx_commerce_products', 'uid');
+											$v[$counter][$key] = (string)$foreign;
+											// TODO: Diesen Datensatz ignorieren und nicht mehr einlesen
+
+											if (0 == (int)$foreign) { $ignoreRecord = true; }
 										break;
-										// Text 
+										case 2:
+											switch ($reg) {
+
+												default:
+													// Erstmal ganz simple
+													$parsed = preg_replace('/\{(\w+)\}/e', '$content[array_search($1,$mapper->columnNamesFromCSV)]', $reg);
+													$v[$counter][$key] = (string) eval('return '.$parsed.';');
+												break;
+											}
+										break;
+										// Text
 										case 3:
 											$v[$counter][$key] = (string) $reg;
 										break;
 									}
+
+								}
+								if ($ignoreRecord) {
+									unset($v[$counter]);
+								} else {
 									$counter++;
 								}
-								
+
 							}
-							
 							/***
 							 * Wenn die Daten in Ordnung sind schreibe Sie in die Datenbank!
 							 */
@@ -325,20 +378,20 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									$updateContent = count($RES);
 								}
 
-							}	
+							}
 							$insertContent = count($v)-$updateContent;
-							
+
 							foreach ($v as $iufields) {
 								$iufields = $GLOBALS['TYPO3_DB']->fullQuoteArray($iufields, $row['dbtable']);
-								
+
 								$t3lib_cs = t3lib_div::makeInstance("t3lib_cs");
 								$t3lib_cs->convArray($iufields,$c['fileCharset'],$c['dbCharset']);
-								
+
 								$doup = array();
 								foreach($iufields as $u => $uv) {
 									$doup[] = $u.'='.$uv;
 								}
-																
+
 								$query = 'INSERT INTO '.$row['dbtable'].'
 								(
 									'.implode(',
@@ -347,70 +400,70 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									'.implode(',
 									',$iufields).'
 								) ON DUPLICATE KEY UPDATE '.implode(',',$doup);
-								
-								
+
+
 								$GLOBALS['TYPO3_DB']->sql_query ($query);
 							}
-							
+
 							$content = ('
 							<table>
 								<tr>
-									<td><img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_database_table.gif" width="16" height="16" /></td>
+									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_table.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoTable').'</td>
 									<td>'.$row['dbtable'].'</td>
 								</tr>
 								<tr>
-									<td><img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_database_key.gif" width="16" height="16" /></td>
+									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_key.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoKeys').'</td>
 									<td>'.((empty($ukeys))?'No keys':implode(', ',$ukeys)).'</td>
 								</tr>
 								<tr>
-									<td><img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_database_csv.gif" width="16" height="16" /></td>
+									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_csv.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoFilePath').'</td>
 									<td>'.$mapper->file.'</td>
 								</tr>
 								<tr>
-									<td><img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_database_add.gif" width="16" height="16" /></td>
+									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_add.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoInserts').'</td>
 									<td>'.$insertContent.'</td>
 								</tr>
 								<tr>
-									<td><img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_database_refresh.gif" width="16" height="16" /></td>
+									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_refresh.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoUpdates').'</td>
 									<td>'.$updateContent.'</td>
 								</tr>
 							</table>
 							');
-							
+
 							$this->content.= '<fieldset>';
 							$this->content.= $this->doc->section($LANG->getLL('UploadStep2InfoTitle').' '.$row['dbtitle'], $content, 0, 1);
 							$this->content.= '</fieldset><br />';
-							
+
 						}
 					}
 					$this->content.= $this->doc->divider(5);
 					$this->content.= '&nbsp;';
 					$this->content.= $this->doc->t3Button('window.history.back();', $LANG->getLL('Back'));
-					
+
 				} else {
 					// Wenn keine Dateien hochgeladen wurden ...
 					$this->content.= '<p>'.$LANG->getLL('UploadStep2UploadNotSuccessfull').'</p>';
 					$content.= $this->doc->divider(5);
 					$this->content.= $this->doc->t3Button('window.history.back();', $LANG->getLL('Back'));
-				
+
 				}
-				
+
 			} elseif($piVars['action']=='import') {
-				
+
 				// In work!
 				// Not included
 				$this->content.= 'Importiert!';
-				
+
 			}
-			
+
 		}
-		
-		
+
+
 		/**
 		 * Menu function 2; Not included yet
 		 *
@@ -420,26 +473,26 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 			$content='<div align=center><strong>Diese Funktion ist noch nicht implementiert.</strong></div>';
 			$this->content.=$this->doc->section('Message #2:',$content,0,1);
 		}
-		
-		
+
+
 		/**
 		 * Menu function 3; Build the steps for mapping
 		 *
 		 * @return void
 		 */
 		function menuFunction3() {
-			
+
 			// Init
 			global $GLOBALS,$LANG;
 			$_PIVARS_	= t3lib_div::_POST('tx_importmanager');
 			$_MAPTABLE_ = (string) $_PIVARS_['mapTable'];
 			$_MAP_		= (array) $_PIVARS_['MAP'];
 
-			
+
 			// Dieser switch soll für die einzelnen Steps des Mapping unterschiedliche
 			// Formulare anzeigen.
 			if($_MAPTABLE_ && !$_MAP_) {
-				
+
 				// Init Block
 				$_CONTENT_ = '';
 				$_FIELDS_  = $GLOBALS['TYPO3_DB']->admin_get_fields($_MAPTABLE_);
@@ -450,14 +503,15 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 						<option value="1" style="background:#FFFF33;">'.$LANG->getLL('MappingStep2MapType1').'</option>
 						<option value="2" style="background:#69A550">'.$LANG->getLL('MappingStep2MapType2').'</option>
 						<option value="3" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType3').'</option>
+						<option value="4" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType4').'</option>
 				');
-				
+
 				// Get map if avaible
 				// Holt alle bereits gemappten Tabellen aus der Datenbank
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*','tx_importmanager_mapping','dbtable="'.$_MAPTABLE_.'" AND hidden=0 AND deleted=0');
 				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 				$ser_arr = (!empty($row)) ? unserialize($row['dbmapping']): array();
-				
+
 				// Build Detail Form
 				$_CONTENT_.= ('
 				<dl>
@@ -470,8 +524,8 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 					<dd><textarea name="tx_importmanager[MAP]['.$_MAPTABLE_.'][description]" rows="6" cols="47">'.$row['dbdescription'].'</textarea></dd>
 				</dl>
 				');
-				
-				
+
+
 				// Build Table Header
 				// Holt zuerst alle Schlüssel aus dem $_FIELDS_ array
 				// um in die 2 Ebene des Assoziativen Arrays zu kommen
@@ -487,18 +541,18 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				foreach ($_FIELDS_ as $_KEY_ => $_VALUE_) {
 					$_FIELDS_[$_KEY_]['MapType'] = '<select name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][MapType]" id="tx_importmanager-select-'.$_COUNTER_.'" onchange="this.parentNode.parentNode.style.background=this.options[this.selectedIndex].style.background;">'.$_MAPTYPE_.'</select>';
 				if(!empty($row)) {
-						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').selectedIndex='.(($ser_arr[$_KEY_]['MapType'])?$ser_arr[$_KEY_]['MapType']:0).';';						
-						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').onchange();';						
+						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').selectedIndex='.(($ser_arr[$_KEY_]['MapType'])?$ser_arr[$_KEY_]['MapType']:0).';';
+						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').onchange();';
 					}
 					$_FIELDS_[$_KEY_]['Mapping'] = '<input type="text" name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][Mapping]" value="'.$ser_arr[$_KEY_]['Mapping'].'" />';
 					$_COUNTER_++;
-				}			
-				
-				
+				}
+
+
 				// Build Table Formular
 				$this->doc->tableLayout['defRow']['defCol'][1] = '&nbsp;</td>';
 				$_CONTENT_.= $this->doc->table($_FIELDS_);
-				
+
 				// Check if some mapping is still avaible
 				if(!empty($row)) {
 					// Delete Mapping
@@ -519,48 +573,48 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 							'.$_JS_.'
 							-->
 							</script>');
-				
-				
-			} elseif($_MAPTABLE_ && $_MAP_) { 
-				
+
+
+			} elseif($_MAPTABLE_ && $_MAP_) {
+
 				// Init Block
 				$_SARR_MAP_ = serialize($_MAP_[$_MAPTABLE_][FIELDS]);
 				$_VALUES_   = array('tstamp' => time(), 'dbtable' => $_MAPTABLE_, 'dbtitle' => $_MAP_[$_MAPTABLE_]['title'], 'dbdescription' => $_MAP_[$_MAPTABLE_]['description'], 'dbmapping' => $_SARR_MAP_);
 
-				
+
 				// Insert or Update
 				// Hier wird erstmal kontrolliert ob es bereits einen Eintrag für diese
 				// Tabelle in der Datenbank gibt und danach entschieden ob ein
 				// Insert oder update durchgeführt werden soll
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','tx_importmanager_mapping','dbtable="'.$_MAPTABLE_.'" AND hidden=0 AND deleted=0');
 				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-				
-				
+
+
 				if(empty($row['uid']) && $_PIVARS_['delete']==0) {
 				// Insert query
-				
+
 					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_importmanager_mapping',$_VALUES_);
 					$this->content.= $LANG->getLL('MappingStep3SaveSuccessful');
-					
+
 				} elseif($_PIVARS_['delete']==0) {
 				// Update query
-					
+
 					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_importmanager_mapping','uid='.$row['uid'],$_VALUES_);
 					$this->content.= $LANG->getLL('MappingStep3UpdateSuccessful');
-					
+
 				} elseif($_PIVARS_['delete']==1) {
 				// Delete query
-					
+
 					$_VALUES_ = array('deleted'=>'1');
 					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_importmanager_mapping','uid='.$row['uid'],$_VALUES_);
 					$this->content.= $LANG->getLL('MappingStep3DeleteSuccessful');
-					
+
 				}
-				
+
 				$this->content.= $this->doc->divider(5);
-				
+
 			} else {
-					
+
 				// Init Block
 				/*
 				 * Achtung! Die funktion admin_get_tables() liefert seit der T3 4.2.x Version
@@ -571,7 +625,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$_mOPTIONS_ = $_sOPTIONS_  = '';
 				$_CONTENT_  = '<p>'.$LANG->getLL('MappingStep1Description').'</p>';
 				$_MAPS_ 	= array();
-				
+
 				// Get all maps
 				// Holt alle bereits gemappten Tabellen aus der Datenbank
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('dbtable','tx_importmanager_mapping','hidden=0 AND deleted=0');
@@ -580,20 +634,20 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				}
 
 				// Typo3 4.2.1 Kompatibel
-				if((float)TYPO3_version >= (float)'4.2.0') {					
-					
+				if((float)TYPO3_version >= (float)'4.2.0') {
+
 					// Für Typo3 4.2.x
 					foreach ($_TABLES_ as $_TABLESKEY_ => $_VALUE_) {
-												
+
 						if($_MAPS_[$_TABLESKEY_]) {
 							$_mOPTIONS_.= '<option value="'.$_TABLESKEY_.'">'.$_TABLESKEY_.'</option>';
 						} else {
 							$_sOPTIONS_.= '<option value="'.$_TABLESKEY_.'">'.$_TABLESKEY_.'</option>';
 						}
 					}
-				
+
 				} else {
-					
+
 					// Für Typo3 4.1.x
 					// Content Block
 					foreach ($_TABLES_ as $_VALUE_) {
@@ -603,25 +657,25 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 							$_sOPTIONS_.= '<option value="'.$_TABLES_[$_VALUE_].'">'.$_VALUE_.'</option>';
 						}
 					}
-					
+
 				}
-					
+
 				// Selector zusammenbauen
 				$_SELECTOR_ = str_replace('%m',$_mOPTIONS_,$_SELECTOR_);
 				$_SELECTOR_ = str_replace('%s',$_sOPTIONS_,$_SELECTOR_);
 				$_CONTENT_ .= $_SELECTOR_;
-				
+
 				$this->content.= $this->doc->section($LANG->getLL('MappingStep1Title'),$_CONTENT_,0,1);
 				$this->content.= $this->doc->divider(5);
 				$this->content.= $this->doc->t3Button('this.form.submit();', $LANG->getLL('Next'));
 				$this->content.= '&nbsp;';
 				$this->content.= $this->doc->t3Button('window.history.back();', $LANG->getLL('Back'));
-				
+
 			}
-			
+
 		}
-		
-		
+
+
 		/**
 		 * Läd die Übergebenen Daten hoch und gibt sie anschließend zurück
 		 *
@@ -629,45 +683,45 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		 * @return Array mit den Dateinamen der hochgeladenen CSV dateien
 		 */
 		function CheckUpload() {
-			
+
 			global $FILEMOUNTS,$TYPO3_CONF_VARS,$BE_USER,$LANG;
-			
-			
+
+
 			// Nur CSV Dateien erlauben
 			$c = unserialize($TYPO3_CONF_VARS['EXT']['extConf']['importmanager']);
 			$TYPO3_CONF_VARS['BE']['fileExtensions'] = array (
     			'webspace' => array('allow'=>$c['importFormats'], 'deny'=>'*'),
 			);
-			
-			
+
+
 			// Hole alle Upload-Felder und setzte das TARGET
 			$file = t3lib_div::_POST('tx_importmanager');
-			
-			
+
+
 			// Upload Einstellen
 			$fileProcessor = t3lib_div::makeInstance('t3lib_extFileFunctions');
 			$fileProcessor->init($FILEMOUNTS, $TYPO3_CONF_VARS['BE']['fileExtensions']);
 			$fileProcessor->init_actionPerms($BE_USER->user['fileoper_perms']);
 			$fileProcessor->dontCheckForUnique = 1;
-			
-			
+
+
 			// Upload ausführen
 			$fileProcessor->start($file);
 			$newFile = array();
 			for ($i=0;$i<count($file['upload']);$i++) {
-				$file['upload'][$i]['target'] = t3lib_div::getFileAbsFileName('fileadmin/_temp_/');	
-				// Die File nur zurückgeben wenn auch wirklich eine datei hochgeladen wurde!					
+				$file['upload'][$i]['target'] = t3lib_div::getFileAbsFileName('fileadmin/_temp_/');
+				// Die File nur zurückgeben wenn auch wirklich eine datei hochgeladen wurde!
 				$newFile[] = $fileProcessor->func_upload($file['upload'][$i], $i);
 			}
-			
-			
+
+
 			// Resultat zurückgeben
 			return $newFile;
 		}
 
-		
+
 		/**
-		 * Erzeugt die Upload-Felder für das Formular, 
+		 * Erzeugt die Upload-Felder für das Formular,
 		 * allerdings nur für die Datenbanktabellen für die
 		 * ein Mapping vorliegt, ansonsten wird eine Hinweiss-
 		 * Meldung ausgegeben das keine Maps vorhanden sind.
@@ -679,20 +733,20 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 
 			// Init alle für die Methode benötigten globalen Variabeln
 			global $GLOBALS,$LANG,$BE_USER;
-			
+
 			// DB Verbindung herstellen und alle relevanten Daten holen
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,dbtable,dbtitle,dbdescription','tx_importmanager_mapping','hidden=0 AND deleted=0');
-			
+
 			// Nachschauen ob der DB Select ein Resultat zurück gibt
 			if($GLOBALS['TYPO3_DB']->sql_num_rows($res)>0) {
-				
+
 				// Init Block; Setzte Zähler und Content
 				$i = 0;
 				$content = '<dl>';
-				
+
 				// Erzeuge für jedes Resultat ein Upload Feld
 				while($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-					
+
 					// Erzeuge das Upload-Feld
 					$content.= ('
 						<dt><label for="form-upload-'.$i.'" style="font-weight:bold;font-size:11px;">'.$row['dbtitle'].':</label>&nbsp;<span style="color:#ABABAB;font-size:9px;">(= '.$row['dbtable'].')</span></dt>
@@ -711,12 +765,12 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$content.= '</dl>';
 				$content.= $this->doc->divider(5);
 				$content.= $this->doc->t3Button('this.form.submit();', $LANG->getLL('UploadStep1Upload'));
-				
+
 				// Gebe den Content zurück
 				return $content;
-				
+
 			} else {
-				
+
 				// Gebe Hinweiss Meldung zurück
 				$content.= '<div class="warningbox">'.$this->doc->sectionBegin();
 				$content.= $this->doc->sectionHeader($this->doc->icons(2).$LANG->getLL('ExtImportantNotice'), FALSE);
@@ -724,12 +778,12 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				if(!$BE_USER->user['admin']) $content.= '<p class="noadmin">'.$LANG->getLL('UploadStep1NoMappingsAvaibleAndNoAdmin').'</p>';
 				$content.= $this->doc->sectionEnd().'</div>';
 				return $content;
-				
+
 			}
-			
+
 		}
-		
-		
+
+
 		/**
 		 * Erzeugt ein hidden Feld Formular in dem die Action des
 		 * abgesendeten Formulars für die Extension definiert wird.
@@ -741,7 +795,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		function SetFormAction( $action ) {
 			return '<input type="hidden" name="tx_importmanager[action]" value="'.$action.'" />';
 		}
-		
+
 }
 
 

@@ -36,6 +36,7 @@
 			<label index="MappingStep2MapType1">CSV-Field</label>
 			<label index="MappingStep2MapType2">Function</label>
 			<label index="MappingStep2MapType3">Text</label>
+			<label index="MappingStep2MapType4">LookupField</label>
 			<label index="MappingStep2DatabaseTitel">Database Title:</label>
 			<label index="MappingStep2DatabaseDescription">Database Description:</label>
 			<label index="MappingStep2DeleteDescription">If you want to delete the databasetable mapping check the box and click "Save mapping"!</label>
