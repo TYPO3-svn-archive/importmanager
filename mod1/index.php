@@ -211,8 +211,59 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		}
 
 		/**
+		 * Looks up in an foreign table which is connected via
+		 * MM-Relation
+		 *
+		 * @params string $value	The value which should be looked for in
+		 * field $field
+		 * @params string $field	look up in that field
+		 * @params string $table 	look up in the field of that table
+		 * @params string $getField return the value of that field in the record
+		 * which has beend found
+		 * @params string $mmtable  MM-Table
+		 * @params string $localTable
+		 * @params string $foreignTable
+		 *
+		 * @return mixed returns False if no record is found, array if there is
+		 * an record
+		 */
+		function lookupForMmRecord($value, $field = 'title', $table = 'tx_commerce_categories', $getField = 'uid', $mmtable = ' tx_commerce_products_categories_mm', $localTable = 'tx_commerce_products', $foreignTable = 'tx_commerce_categories') {
+			// t3lib_div::debug("Value: $value<br>Field: $field<br>Table: $table<br>getField: $getField");
+			$uid = $this->lookupForRecord($value, $field, $table, $getField);
+
+			if (false === $uid) { return false; }
+			$uid_local = '';
+			$uid_foreign = '';
+			if ($localTable == $table) {
+				$uid_local = $uid;
+				$insertInto = 'uid_foreign';
+			} else {
+				$uid_foreign = $uid;
+				$insertInto = 'uid_local';
+			}
+			// vollständige Textfelder  	uid_local 	uid_foreign 	tablenames 	sorting
+			// the array which should be inserted into table "table"
+			$updateArray = array(
+				'insertInto' => $insertInto, // in which field the uid of the imported record should be inserted
+				'table' => $mmtable,
+				'uid_local' => $uid_local,
+				'uid_foreign' => $uid_foreign,
+				'tablenames' => '',
+			);
+			return $updateArray;
+		}
+
+		/**
 		 * Looks in an foreign table
-		 * for an parent-uid
+		 * searches for an record which has an special value in an field, and
+		 * returns f.e. the uid of that record
+		 *
+		 * @params string $value	The value which should be looked for in
+		 * field $field
+		 * @params string $field	look up in that field
+		 * @params string $table 	look up in the field of that table
+		 * @params string $getField return the value of that field in the record
+		 * which has beend found
 		 *
 		 * @return integer	The uid which has been found, false otherwise
 		 */
@@ -261,6 +312,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$this->content.= $this->doc->section($LANG->getLL('UploadStep2Title'), '', 0, 1);
 
 				$files = $this->CheckUpload();
+				$t3lib_cs = t3lib_div::makeInstance("t3lib_cs");
 
 				// Switch für die Files
 				if(!empty($files)) {
@@ -271,6 +323,16 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 					$mapper->fieldDelimiter = $c['fieldDelimiter'];
 					$mapper->fieldEncaps = $c['fieldEncaps'];
 					$mapper->CSVhasTitle = $c['CSVhasTitle'] ? TRUE: FALSE;
+
+					$c['fileCharset'] = $t3lib_cs->parse_charset($c['fileCharset']);
+					$c['dbCharset'] = $t3lib_cs->parse_charset($c['dbCharset']);
+					// check if charset is known by TYPO3
+					if (false === array_search($c['dbCharset'], $t3lib_cs->synonyms)) {
+						die('Characterset for DB is unknown in TYPO3, check spelling: '.$c['dbCharset']);
+					}
+					if (false === array_search($c['fileCharset'], $t3lib_cs->synonyms)) {
+						die('Characterset for FILE is unknown in TYPO3, check spelling: '.$c['fileCharset']);
+					}
 
 					// Für jede Datei die hochgeladen wurde, wird diese Schleife durchlaufen
 					foreach ($files as $key => $value) {
@@ -287,8 +349,13 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 							$map = unserialize($row['dbmapping']);
 							$mapper->columnNamesFromDB = $GLOBALS['TYPO3_DB']->admin_get_fields($row['dbtable']);
 
+							$t3lib_cs->convArray($mapper->columnNamesFromCSV,$c['fileCharset'],$c['dbCharset'], true);
+							$t3lib_cs->convArray($mapper->CSV,$c['fileCharset'],$c['dbCharset'], true);
 							$tmp = $mapper->columnNamesFromCSV;
 							$mapper->CSVcolumnToContent = array_flip($tmp);
+							// used to update f.e. mm-relation tables
+							$updateLate = array();
+							$updateLate['mm'] = array(); // MM-Relation Tables
 
 							$counter = 0;
 
@@ -307,26 +374,6 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											$v[$counter][$key] = (string) $content[array_search($reg,$mapper->columnNamesFromCSV)];
 										break;
 										// Funktion
-										case 4:
-											$v[$counter][$key] = (string)22;
-											// Look up and find product uid with
-											// title =
-											// $mapper->CSVcolumnToContent[]
-
-/*
-t3lib_div::debug($content);
-t3lib_div::debug($mapper->columnNamesFromCSV);
-t3lib_div::debug($mapper->CSVcolumnToContent);
-*/
-// echo " $counter - $key - $value - $reg";
-
-											// $v[$counter][$key] =
-											$foreign = $this->lookupForRecord($content[$mapper->CSVcolumnToContent['Serie']], 'title', 'tx_commerce_products', 'uid');
-											$v[$counter][$key] = (string)$foreign;
-											// TODO: Diesen Datensatz ignorieren und nicht mehr einlesen
-
-											if (0 == (int)$foreign) { $ignoreRecord = true; }
-										break;
 										case 2:
 											switch ($reg) {
 
@@ -341,16 +388,73 @@ t3lib_div::debug($mapper->CSVcolumnToContent);
 										case 3:
 											$v[$counter][$key] = (string) $reg;
 										break;
+										// Look Up Field
+										case 4:
+											// Syntax
+											list($feld, $lookupField, $lookupTable, $returnField) = t3lib_div::trimExplode('|',$reg,true);
+
+											// $v[$counter][$key] =
+// echo "Look up for: ".$content[$mapper->CSVcolumnToContent['Serie']].'<br>';
+											$foreign = $this->lookupForRecord($content[$mapper->CSVcolumnToContent[$feld]], $lookupField, $lookupTable, $returnField);
+											$v[$counter][$key] = (string)$foreign;
+											// TODO: Diesen Datensatz ignorieren und nicht mehr einlesen
+
+											if (0 == (int)$foreign) { $ignoreRecord = true; }
+										break;
+										// LookUpMMField
+										//
+										// Darf erst hinzugefügt werden, wenn der Datensatz eingefügt
+										// oder geupdated werden, da sonst der Zusammenhang unklar ist
+										//
+										// Informationen werden in $updateLate gespeichert,
+										// damit dann später entsprechend abgefragt werden kann
+										case 5:
+											// "Katalog 2009Gruppierung1";"Katalog 2009Gruppierung2 ";"Serie"|tx_commerce_products_categories_mm|tx_commerce_categories.title
+											list($felder, $mm, $lookupField, $listInsteadCounter) = t3lib_div::trimExplode('|',$reg,true);
+											list($lookupTable, $lookupField) = t3lib_div::trimExplode('.',$lookupField,true);
+											$felder = t3lib_div::trimExplode(';',$felder,true);
+											$v[$counter][$key] = 0;
+											$lookup = array();
+											foreach ($felder as $fieldName) {
+												if ('"' == substr($fieldName,0,1) && '"' == substr($fieldName,-1,1)) {
+													$fieldName = substr($fieldName,1,-1);
+												}
+												// t3lib_div::debug('Suchen: '.$fieldName);
+// echo "Look up for: ".$content[$mapper->CSVcolumnToContent[$fieldName]].'<br>';
+												$tmp = $this->lookupForMmRecord(
+														$content[$mapper->CSVcolumnToContent[$fieldName]],
+														$lookupField,
+														$lookupTable,
+														'uid',
+														$mm,
+														'tx_commerce_products',
+														'tx_commerce_categories'
+												);
+												// t3lib_div::debug($tmp);
+												// only one could be filled
+												$lookup[] = $tmp['uid_local'].$tmp['uid_foreign'];
+												$updateLate['mm'][$tmp['table']][] = $tmp;
+												$v[$counter][$key]++;
+
+											}
+											if ($listInsteadCounter) {
+												$v[$counter][$key] = t3lib_div::uniqueList(implode(',',$lookup));
+											}
+										break;
 									}
 
 								}
 								if ($ignoreRecord) {
+// echo "Ignore Record<br>";
 									unset($v[$counter]);
 								} else {
 									$counter++;
 								}
 
 							}
+
+ t3lib_div::debug($v);
+
 							/***
 							 * Wenn die Daten in Ordnung sind schreibe Sie in die Datenbank!
 							 */
@@ -362,7 +466,7 @@ t3lib_div::debug($mapper->CSVcolumnToContent);
 								foreach ($dbKeysArr as $dbKey) {
 									if($dbKey['Non_unique']==0 && $map[$dbKey['Column_name']]['MapType']!=0) {
 										$wkey[] = $dbKey['Column_name'];
-										$ukeys[$dbKey['Column_name']] = $dbKey['Column_name'].' <img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_icon_'.(($dbKey['Key_name']=='PRIMARY') ? 'key':'unique').'.gif" width="16" height="16" />';
+										$ukeys[$dbKey['Column_name']] = $dbKey['Column_name'].' <img src="../mod/res/tx_importmanager_icon_'.(($dbKey['Key_name']=='PRIMARY') ? 'key':'unique').'.gif" width="16" height="16" />';
 										$where[$dbKey['Column_name']].= $dbKey['Column_name'].' IN (';
 										$k=FALSE;
 										foreach ($v as $fields) {
@@ -383,10 +487,7 @@ t3lib_div::debug($mapper->CSVcolumnToContent);
 
 							foreach ($v as $iufields) {
 								$iufields = $GLOBALS['TYPO3_DB']->fullQuoteArray($iufields, $row['dbtable']);
-
-								$t3lib_cs = t3lib_div::makeInstance("t3lib_cs");
-								$t3lib_cs->convArray($iufields,$c['fileCharset'],$c['dbCharset']);
-
+								// $t3lib_cs->convArray($iufields,$c['fileCharset'],$c['dbCharset'], true);
 								$doup = array();
 								foreach($iufields as $u => $uv) {
 									$doup[] = $u.'='.$uv;
@@ -402,33 +503,66 @@ t3lib_div::debug($mapper->CSVcolumnToContent);
 								) ON DUPLICATE KEY UPDATE '.implode(',',$doup);
 
 
-								$GLOBALS['TYPO3_DB']->sql_query ($query);
+								$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
+								if ($res) {
+									// if this record was updated/inserted successfull
+									$affected_rows = $GLOBALS['TYPO3_DB']->sql_affected_rows();
+									// http://dev.mysql.com/doc/refman/5.0/es/mysql-affected-rows.html
+									if (1 == $affected_rows) {
+										// inserted
+										$uid = $GLOBALS['TYPO3_DB']->sql_insert_id();
+									} else {
+										// We need to look up the updated
+										// record, because there is no possibility to get it
+										// so we create an select query like it was updated/inserted
+										// before
+										$query = 'SELECT uid FROM '.$row['dbtable'].' WHERE ';
+										$whereArray = array();
+										foreach ($iufields as $field => $value) {
+											$whereArray[] = $field.' = '.$value.'';
+										}
+										$query .= implode(' AND ',$whereArray);
+										$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
+										$uid = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+										$uid = $uid['uid'];
+									}
+									foreach ($updateLate['mm'] as $mmTable => $mmTableArray) {
+										foreach ($mmTableArray as $mmTableValues) {
+											$mmTableValues[$mmTableValues['insertInto']] = $uid;
+											// t3lib_div::debug($mmTable);
+											// t3lib_div::debug($mmTableValues);
+											unset($mmTableValues['insertInto']);
+											unset($mmTableValues['table']);
+											$GLOBALS['TYPO3_DB']->exec_INSERTquery($mmTable,$mmTableValues);
+										}
+									}
+								}
 							}
 
 							$content = ('
 							<table>
 								<tr>
-									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_table.gif" width="16" height="16" /></td>
+									<td><img src="../mod/res/tx_importmanager_database_table.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoTable').'</td>
 									<td>'.$row['dbtable'].'</td>
 								</tr>
 								<tr>
-									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_key.gif" width="16" height="16" /></td>
+									<td><img src="../mod/res/tx_importmanager_database_key.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoKeys').'</td>
 									<td>'.((empty($ukeys))?'No keys':implode(', ',$ukeys)).'</td>
 								</tr>
 								<tr>
-									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_csv.gif" width="16" height="16" /></td>
+									<td><img src="../mod/res/tx_importmanager_database_csv.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoFilePath').'</td>
 									<td>'.$mapper->file.'</td>
 								</tr>
 								<tr>
-									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_add.gif" width="16" height="16" /></td>
+									<td><img src="../mod/res/tx_importmanager_database_add.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoInserts').'</td>
 									<td>'.$insertContent.'</td>
 								</tr>
 								<tr>
-									<td><img src="typo3conf/ext/importmanager/mod/res/tx_importmanager_database_refresh.gif" width="16" height="16" /></td>
+									<td><img src="../mod/res/tx_importmanager_database_refresh.gif" width="16" height="16" /></td>
 									<td>'.$LANG->getLL('UploadStep2InfoUpdates').'</td>
 									<td>'.$updateContent.'</td>
 								</tr>
@@ -504,6 +638,7 @@ t3lib_div::debug($mapper->CSVcolumnToContent);
 						<option value="2" style="background:#69A550">'.$LANG->getLL('MappingStep2MapType2').'</option>
 						<option value="3" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType3').'</option>
 						<option value="4" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType4').'</option>
+						<option value="5" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType5').'</option>
 				');
 
 				// Get map if avaible
@@ -752,7 +887,7 @@ t3lib_div::debug($mapper->CSVcolumnToContent);
 						<dt><label for="form-upload-'.$i.'" style="font-weight:bold;font-size:11px;">'.$row['dbtitle'].':</label>&nbsp;<span style="color:#ABABAB;font-size:9px;">(= '.$row['dbtable'].')</span></dt>
 						<dd style="margin-bottom: 5px;">
 							<p>'.$row['dbdescription'].'</p>
-							<input type="file" size="30" name="upload_'.$i.'" id="form-upload-'.$i.'" />&nbsp;<a href="class.tx_importmanager_csvtemplate.php?&uid='.$row['uid'].'" target="self"><img src="/typo3conf/ext/importmanager/mod/res/tx_importmanager_icon_download_csv.gif" alt="'.$LANG->getLL('UploadStep1CSVTemplateLink').'" title="'.$LANG->getLL('UploadStep1CSVTemplateLink').'" width="16" height="16" /></a>
+							<input type="file" size="30" name="upload_'.$i.'" id="form-upload-'.$i.'" />&nbsp;<a href="class.tx_importmanager_csvtemplate.php?&uid='.$row['uid'].'" target="self"><img src="../mod/res/tx_importmanager_icon_download_csv.gif" alt="'.$LANG->getLL('UploadStep1CSVTemplateLink').'" title="'.$LANG->getLL('UploadStep1CSVTemplateLink').'" width="16" height="16" /></a>
 							<input type="hidden" name="tx_importmanager[upload]['.$i.'][data]" value="'.$i.'" />
 							<input type="hidden" name="tx_importmanager[upload]['.$i.'][uid]" value="'.$row['uid'].'" />
 						</dd>
