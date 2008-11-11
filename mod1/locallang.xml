@@ -20,6 +20,7 @@
 			<label index="UploadStep1Upload">Upload &amp; import</label>
 			<label index="UploadStep2Title">Step 2: Import</label>
 			<label index="UploadStep2UploadNotSuccessfull">No files uploaded.</label>
+			<label index="UploadStep2UploadNotSuccessfullNoData">File has not been imported.</label>
 			<label index="UploadStep2InfoTitle">Import of:</label>
 			<label index="UploadStep2InfoTable">Table:</label>
 			<label index="UploadStep2InfoKeys">Keys:</label>
