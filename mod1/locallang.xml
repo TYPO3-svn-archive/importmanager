@@ -28,7 +28,8 @@
 			<label index="UploadStep2InfoInserts">Inserts:</label>
 			<label index="UploadStep2InfoUpdates">Updates:</label>
 			<label index="MappingStep1Title">Step 1: Chosse database</label>
-			<label index="MappingStep1Description">Please choose a databasetable for mapping.</label>
+			<label index="MappingStep1Description">Please choose a avaible mapping for editing:</label>
+			<label index="MappingStep1DescriptionPartII">or you choose a new database to create a new mapping:</label>
 			<label index="MappingStep1DBTableWithMap">Databasetables with maps</label>
 			<label index="MappingStep1DBTableWithoutMap">Databasetables without maps</label>
 			<label index="MappingStep2Title">Step 2: Mapping for</label>
@@ -72,7 +73,8 @@
 			<label index="UploadStep2InfoInserts">Inserts:</label>
 			<label index="UploadStep2InfoUpdates">Updates:</label>
 			<label index="MappingStep1Title">Schritt 1: Datenbank auswählen</label>
-			<label index="MappingStep1Description">Wählen Sie bitte die Datenbank-Tabelle aus für die Sie eine Mapping erstellen wollen.</label>
+			<label index="MappingStep1Description">Wählen Sie bitte ein vorhandenes Mapping zum bearbeiten:</label>
+			<label index="MappingStep1DescriptionPartII">oder Sie eine Datenbank und erzeugen ein neues Mapping:</label>
 			<label index="MappingStep1DBTableWithMap">Datenbanktabellen mit Maps</label>
 			<label index="MappingStep1DBTableWithoutMap">Datenbanktabellen ohne Maps</label>
 			<label index="MappingStep2Title">Schritt 2: Mapping für</label>
