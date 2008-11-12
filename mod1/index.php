@@ -383,7 +383,9 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											default:
 												// Erstmal ganz simple
 												$parsed = preg_replace('/\{(\w+)\}/e', '$content[array_search($1,$mapper->columnNamesFromCSV)]', $reg);
-												$v[$counter][$key] = (string) eval('return '.$parsed.';');
+												// addslashes nicht zu den ersten beiden Zeichen!
+												$parsed = '\''.addslashes(mb_substr(trim($parsed), 1, -1)).'\'';
+												$v[$counter][$key] = (string) @eval('return '.$parsed.';') or die('eval error: '.$parsed);
 											break;
 										}
 									break;
