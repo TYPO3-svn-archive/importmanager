@@ -772,7 +772,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				 * ein multidimensionales Array zurück!
 				 */
 				$_TABLES_   = $GLOBALS['TYPO3_DB']->admin_get_tables();
-				$_SELECTOR_ = '<select name="tx_importmanager[mapTable]" onchange="this.form.submit();"><option value="NULL" selected="selected">&nbsp;</option><optgroup label="'.$LANG->getLL('MappingStep1DBTableWithMap').'" style="background:#94C78D;">%m</optgroup><optgroup label="'.$LANG->getLL('MappingStep1DBTableWithoutMap').'">%s</optgroup></select>';
+				$_SELECTOR_ = '<select name="tx_importmanager[new_mapTable]" onchange="if(this.value!=\'NULL\'){document.getElementsByName(\'tx_importmanager[mapTable]\')[0].value=this.value;this.form.submit();}"><option value="NULL" selected="selected">&nbsp;</option><optgroup label="'.$LANG->getLL('MappingStep1DBTableWithoutMap').'">%s</optgroup></select>';
 				$_mOPTIONS_ = $_sOPTIONS_  = '';
 				$_CONTENT_  = '<p>'.$LANG->getLL('MappingStep1Description').'</p>';
 				$_MAPS_ 	= array();
@@ -791,39 +791,42 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 
 					// Für Typo3 4.2.x
 					foreach ($_TABLES_ as $_TABLESKEY_ => $_VALUE_) {
-
 						if($_MAPS_[$_TABLESKEY_]) {
 							foreach ($_ALL_MAPS[$_TABLESKEY_] as $row) {
 								$_mOPTIONS_.= '<option value="'.$_TABLESKEY_.':'.$row['uid'].'">'.$_TABLESKEY_.' ('.$row['dbtitle'].')</option>';
 							}
-							$_mOPTIONS_.= '<option value="'.$_TABLESKEY_.'">'.$_TABLESKEY_.' (NEU)</option>';
-						} else {
-							$_sOPTIONS_.= '<option value="'.$_TABLESKEY_.'">'.$_TABLESKEY_.'</option>';
 						}
-					}
+						$_sOPTIONS_.= '<option value="'.$_TABLESKEY_.'">'.$_TABLESKEY_.'</option>';
+					} 
 
 				} else {
-t3lib_div::debug('not really tested yet for TYPO3 < 4.2');
+					t3lib_div::debug('not really tested yet for TYPO3 < 4.2');
 					// Für Typo3 4.1.x
 					// Content Block
 					foreach ($_TABLES_ as $_VALUE_) {
 						if($_MAPS_[$_VALUE_]) {
-							// $_mOPTIONS_.= '<option value="'.$_TABLES_[$_VALUE_].'">'.$_VALUE_.'</option>';
 							foreach ($_ALL_MAPS[$_VALUE_] as $row) {
 								$_mOPTIONS_.= '<option value="'.$_VALUE_.':'.$row['uid'].'">'.$_VALUE_.'</option>';
 							}
-							$_mOPTIONS_.= '<option value="'.$_TABLES_[$_VALUE_].'">'.$_VALUE_.' (NEU)</option>';
-						} else {
-							$_sOPTIONS_.= '<option value="'.$_TABLES_[$_VALUE_].'">'.$_VALUE_.'</option>';
 						}
+						$_sOPTIONS_.= '<option value="'.$_TABLES_[$_VALUE_].'">'.$_VALUE_.'</option>';
 					}
 
 				}
 
-				// Selector zusammenbauen
-				$_SELECTOR_ = str_replace('%m',$_mOPTIONS_,$_SELECTOR_);
+				// Build selector for avaible mappings
+				$selectorForAvaibleMappings = '<select name="tx_importmanager[edit_mapTable]" size="10" onchange="if(this.value!=\'NULL\'){document.getElementsByName(\'tx_importmanager[mapTable]\')[0].value=this.value;this.form.submit();}"><optgroup label="'.$LANG->getLL('MappingStep1DBTableWithMap').'" style="background:#94C78D;">%m</optgroup></select><br />';
+				$selectorForAvaibleMappings = str_replace('%m',$_mOPTIONS_,$selectorForAvaibleMappings);
+				
+				// Selector for databases
 				$_SELECTOR_ = str_replace('%s',$_sOPTIONS_,$_SELECTOR_);
+				
+				$_CONTENT_ .= $selectorForAvaibleMappings;
+				$_CONTENT_ .= '<p>'.$LANG->getLL('MappingStep1DescriptionPartII').'</p>';
 				$_CONTENT_ .= $_SELECTOR_;
+				
+				// Hidden-field to set the mapTable
+				$_CONTENT_ .= '<input type="hidden" name="tx_importmanager[mapTable]" value="" />';
 
 				$this->content.= $this->doc->section($LANG->getLL('MappingStep1Title'),$_CONTENT_,0,1);
 				$this->content.= $this->doc->divider(5);
