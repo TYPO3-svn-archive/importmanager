@@ -425,6 +425,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 												$fieldName = substr($fieldName,1,-1);
 											}
 											// t3lib_div::debug('Suchen: '.$fieldName);
+// TODO: hartcodierte Tabellen raus!
 											$tmp = $this->lookupForMmRecord(
 													$content[$mapper->CSVcolumnToContent[$fieldName]],
 													$lookupField,
@@ -437,7 +438,12 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											// t3lib_div::debug($tmp);
 											// only one could be filled
 											$lookup[] = $tmp['uid_local'].$tmp['uid_foreign'];
-											$updateLate['mm'][$tmp['table']][] = $tmp;
+											if ('' != trim($tmp['uid_local'].$tmp['uid_foreign'])) {
+												// if an entry is in more than one field, this should
+												// lead to the same key, so only one relation will be inserted
+												// into db
+												$updateLate['mm'][$counter][$tmp['table']][$tmp['uid_local'].$tmp['uid_foreign']] = $tmp;
+											}
 											$v[$counter][$key]++;
 
 										}
@@ -497,7 +503,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 							continue;
 						}
 
-						foreach ($v as $iufields) {
+						foreach ($v as $counter => $iufields) {
 							$iufields = $GLOBALS['TYPO3_DB']->fullQuoteArray($iufields, $row['dbtable']);
 							// $t3lib_cs->convArray($iufields,$c['fileCharset'],$c['dbCharset'], true);
 							$doup = array();
@@ -538,14 +544,18 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									$uid = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 									$uid = $uid['uid'];
 								}
-								foreach ($updateLate['mm'] as $mmTable => $mmTableArray) {
-									foreach ($mmTableArray as $mmTableValues) {
-										$mmTableValues[$mmTableValues['insertInto']] = $uid;
-										// t3lib_div::debug($mmTable);
-										// t3lib_div::debug($mmTableValues);
-										unset($mmTableValues['insertInto']);
-										unset($mmTableValues['table']);
-										$GLOBALS['TYPO3_DB']->exec_INSERTquery($mmTable,$mmTableValues);
+								// t3lib_div::debug($iufields);
+								// t3lib_div::debug($updateLate['mm'][$counter]);
+								if (is_array($updateLate['mm'][$counter])) {
+									foreach ($updateLate['mm'][$counter] as $mmTable => $mmTableArray) {
+										foreach ($mmTableArray as $mmTableValues) {
+											$mmTableValues[$mmTableValues['insertInto']] = $uid;
+											// t3lib_div::debug($mmTable);
+											// t3lib_div::debug($mmTableValues);
+											unset($mmTableValues['insertInto']);
+											unset($mmTableValues['table']);
+											$GLOBALS['TYPO3_DB']->exec_INSERTquery($mmTable,$mmTableValues);
+										}
 									}
 								}
 							}
@@ -797,7 +807,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 							}
 						}
 						$_sOPTIONS_.= '<option value="'.$_TABLESKEY_.'">'.$_TABLESKEY_.'</option>';
-					} 
+					}
 
 				} else {
 					t3lib_div::debug('not really tested yet for TYPO3 < 4.2');
@@ -817,14 +827,14 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				// Build selector for avaible mappings
 				$selectorForAvaibleMappings = '<select name="tx_importmanager[edit_mapTable]" size="10" onchange="if(this.value!=\'NULL\'){document.getElementsByName(\'tx_importmanager[mapTable]\')[0].value=this.value;this.form.submit();}"><optgroup label="'.$LANG->getLL('MappingStep1DBTableWithMap').'" style="background:#94C78D;">%m</optgroup></select><br />';
 				$selectorForAvaibleMappings = str_replace('%m',$_mOPTIONS_,$selectorForAvaibleMappings);
-				
+
 				// Selector for databases
 				$_SELECTOR_ = str_replace('%s',$_sOPTIONS_,$_SELECTOR_);
-				
+
 				$_CONTENT_ .= $selectorForAvaibleMappings;
 				$_CONTENT_ .= '<p>'.$LANG->getLL('MappingStep1DescriptionPartII').'</p>';
 				$_CONTENT_ .= $_SELECTOR_;
-				
+
 				// Hidden-field to set the mapTable
 				$_CONTENT_ .= '<input type="hidden" name="tx_importmanager[mapTable]" value="" />';
 
