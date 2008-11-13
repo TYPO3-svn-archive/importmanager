@@ -33,7 +33,8 @@ require_once(PATH_t3lib.'class.t3lib_extfilefunc.php');
 require_once(t3lib_extMgm::extPath('rs_userimp').'mod1/class.tx_rsuserimp.php');
 
 $LANG->includeLLFile('EXT:importmanager/mod1/locallang.xml');
-require_once(PATH_t3lib.'class.t3lib_scbase.php');
+# require_once(PATH_t3lib.'class.t3lib_scbase.php');
+require_once(PATH_t3lib.'class.t3lib_svbase.php');
 $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users has no permission for entry.
 	// DEFAULT initialization of a module [END]
 
@@ -45,7 +46,7 @@ $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users
  * @package TYPO3
  * @subpackage tx_importmanager
  */
-class tx_importmanager_csvtemplate extends t3lib_SCbase  {
+class tx_importmanager_csvtemplate extends t3lib_svbase  {
 	var $pageinfo;
 	
 	
@@ -82,7 +83,7 @@ class tx_importmanager_csvtemplate extends t3lib_SCbase  {
 			
 			if($row) {
 				
-				$t3lib_svbase = t3lib_div::makeInstance('t3lib_svbase');
+				# $t3lib_svbase = t3lib_div::makeInstance('t3lib_svbase');
 				$t3lib_basicFileFunctions = t3lib_div::makeInstance('t3lib_basicFileFunctions');
 				
 				$CSV_COLUMNS = array();
@@ -98,7 +99,7 @@ class tx_importmanager_csvtemplate extends t3lib_SCbase  {
 				$t3lib_cs->convArray($CSV_COLUMNS,$c['dbCharset'],$c['fileCharset']);
 				
 				// Build CSV file
-				$CSV_FILE = $t3lib_svbase->writeFile(implode($c['fieldDelimiter'],$CSV_COLUMNS),PATH_site.'uploads/tx_importmanager/'.$row['dbtable'].'.csv');
+				$CSV_FILE = $this->writeFile(implode($c['fieldDelimiter'],$CSV_COLUMNS),PATH_site.'uploads/tx_importmanager/'.$row['dbtable'].'.csv');
 				$CSV_INFO = $t3lib_basicFileFunctions->getTotalFileInfo($CSV_FILE);
 				
 				// Build header for download
@@ -116,16 +117,17 @@ class tx_importmanager_csvtemplate extends t3lib_SCbase  {
 	
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/importmanager/mod1/class.tx_importmanager_csvtemplate.php'])	{
+/* No XCLASS needed?!
+	if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/importmanager/mod1/class.tx_importmanager_csvtemplate.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/importmanager/mod1/class.tx_importmanager_csvtemplate.php']);
-}
+} */
 
 // Make instance:
 $SOBE = t3lib_div::makeInstance('tx_importmanager_csvtemplate');
 $SOBE->init();
 
 // Include files?
-foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
+// foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
 
 // Run it
 $SOBE->main();
