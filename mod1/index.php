@@ -351,7 +351,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 
 						$map = unserialize($row['dbmapping']);
 						$mapper->columnNamesFromDB = $GLOBALS['TYPO3_DB']->admin_get_fields($row['dbtable']);
-
+						# converting content for database
 						$t3lib_cs->convArray($mapper->columnNamesFromCSV,$c['fileCharset'],$c['dbCharset'], true);
 						$t3lib_cs->convArray($mapper->CSV,$c['fileCharset'],$c['dbCharset'], true);
 						$tmp = $mapper->columnNamesFromCSV;
@@ -374,18 +374,16 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 								switch ($map[$key]['MapType']) {
 									// CSV-Feld
 									case 1:
-										$v[$counter][$key] = (string) $content[array_search($reg,$mapper->columnNamesFromCSV)];
+										# Das htmlspecialchars(*) muss an einer anderen Stelle stehen!
+										$v[$counter][$key] = htmlspecialchars((string) $content[array_search($reg,$mapper->columnNamesFromCSV)]);
 									break;
 									// Funktion
 									case 2:
 										switch ($reg) {
-
 											default:
 												// Erstmal ganz simple
-												$parsed = preg_replace('/\{(\w+)\}/e', '$content[array_search($1,$mapper->columnNamesFromCSV)]', $reg);
-												// addslashes nicht zu den ersten beiden Zeichen!
-												$parsed = '\''.addslashes(mb_substr(trim($parsed), 1, -1)).'\'';
-												$v[$counter][$key] = (string) @eval('return '.$parsed.';') or die('eval error: '.$parsed);
+												$parsed = preg_replace('/\{(\w+)\}/e','addslashes($content[array_search($1,$mapper->columnNamesFromCSV)])', $reg);
+												$v[$counter][$key] = (string) eval('return '.$parsed.';'); // or die('eval error: '.$parsed.' | counter: '.$counter.' | key: '.$key);
 											break;
 										}
 									break;
@@ -698,6 +696,9 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 					$this->doc->table_TABLE.= '<th>'.$_VALUE_.'</th>';
 				}
 				$this->doc->table_TABLE.= '<th>MapType</th><th>Mapping</th></tr>';
+				
+				# t3lib_div::debug($_FIELDS_);
+				
 				foreach ($_FIELDS_ as $_KEY_ => $_VALUE_) {
 					$_FIELDS_[$_KEY_]['MapType'] = '<select name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][MapType]" id="tx_importmanager-select-'.$_COUNTER_.'" onchange="this.parentNode.parentNode.style.background=this.options[this.selectedIndex].style.background;">'.$_MAPTYPE_.'</select>';
 				if(!empty($row)) {

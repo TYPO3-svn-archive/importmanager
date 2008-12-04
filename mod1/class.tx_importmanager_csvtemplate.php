@@ -23,20 +23,19 @@
 ***************************************************************/
 
 
-	// DEFAULT initialization of a module [BEGIN]
+// DEFAULT initialization of a module [BEGIN]
 unset($MCONF);
 require_once('conf.php');
 require_once($BACK_PATH.'init.php');
 require_once($BACK_PATH.'template.php');
 require_once(PATH_t3lib.'class.t3lib_basicfilefunc.php');
 require_once(PATH_t3lib.'class.t3lib_extfilefunc.php');
-require_once(t3lib_extMgm::extPath('rs_userimp').'mod1/class.tx_rsuserimp.php');
 
 $LANG->includeLLFile('EXT:importmanager/mod1/locallang.xml');
-# require_once(PATH_t3lib.'class.t3lib_scbase.php');
+
 require_once(PATH_t3lib.'class.t3lib_svbase.php');
 $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users has no permission for entry.
-	// DEFAULT initialization of a module [END]
+// DEFAULT initialization of a module [END]
 
 
 /**
@@ -125,11 +124,6 @@ class tx_importmanager_csvtemplate extends t3lib_svbase  {
 // Make instance:
 $SOBE = t3lib_div::makeInstance('tx_importmanager_csvtemplate');
 $SOBE->init();
-
-// Include files?
-// foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
-
-// Run it
 $SOBE->main();
 
 ?>
