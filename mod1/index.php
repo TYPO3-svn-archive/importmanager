@@ -38,6 +38,7 @@ $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users
 	// DEFAULT initialization of a module [END]
 
 
+
 /**
  * Module 'Import Manager' for the 'importmanager' extension.
  *
@@ -645,17 +646,20 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									$uid = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 									$uid = $uid['uid'];
 								}
-// sorry, quick hack
-/*
-$query = 'SELECT uid FROM tx_commerce_articles WHERE uid_product = '.(int)$uid;
-$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
-$tmp = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-if (!is_array($tmp) || 0 == count($tmp)) {
-	// Artikel anlegen
-	$query = 'INSERT INTO tx_commerce_articles (uid_product, pid, title) VALUES ('.(int)$uid.', 205,"'.$GLOBALS['TYPO3_DB']->quoteStr('Preise', 'tx_commerce_articles').'" ) ';
-	$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
-}
-*/
+
+
+
+						  		$hookObjectsArr = array();
+								if (is_array ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['importmanager']['mod1/index.php']['beforeUpdateLate'])) {
+										foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['importmanager']['mod1/index.php']['beforeUpdateLate'] as $classRef) {
+												$hookObjectsArr[] = &t3lib_div::getUserObj($classRef);
+										}
+								}
+								foreach($hookObjectsArr as $hookObj)	{
+									if (method_exists($hookObj, 'beforeUpdateLate')) {
+										$updateLate = $hookObj->beforeUpdateLate($this, $updateLate, $uid, $counter, $iufields);
+									}
+								}
 
 
 								// t3lib_div::debug($iufields);
