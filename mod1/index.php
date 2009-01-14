@@ -210,6 +210,42 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 			}
 		}
 
+
+		/**
+		 * This function is used to search in an specific table.
+		 * The fieldArray holds all fields which should have an specified value
+		 * if an record whith the defined combination is found, the field
+		 * $lookupField will be returned, otherwise false
+		 *
+		 * @lookupTable	string	the table in which we should search for the
+		 * record
+		 * @lookupField string	the field name which value should be returned,
+		 * if an record which matches the configuration in $fieldArray is found
+		 * @fieldArray	array	multidimensional array which defines in which
+		 * field we should search for which value; each item has to be an array,
+		 * where the first is the fieldname, and the second the value to look
+		 * for
+		 */
+		function searchRecord($lookupTable, $lookupField, $fieldArray) {
+			if ('' == $lookupTable || '' == $lookupField || !is_array($fieldArray) || 0 == count($fieldArray)) { return false; }
+			$query = array();
+			foreach ($fieldArray as $k => $config) {
+				// tx_artikelstammdaten_materialnummersap:MaterialNummer
+				$query[] = $GLOBALS['TYPO3_DB']->quoteStr($config[0], $lookupTable).'="'.$GLOBALS['TYPO3_DB']->quoteStr($config[1], $lookupTable).'"';
+			}
+			$query[] = 'hidden = 0';
+			$query[] = 'deleted=0';
+
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($GLOBALS['TYPO3_DB']->quoteStr($lookupField, $lookupTable),
+				$lookupTable,
+				implode(' AND ',$query));
+			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+			if (0 == count($row)) {
+				return false;
+			}
+			return $row[$lookupField];
+		}
+
 		/**
 		 * Looks up in an foreign table which is connected via
 		 * MM-Relation
@@ -227,7 +263,8 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		 * @return mixed returns False if no record is found, array if there is
 		 * an record
 		 */
-		function lookupForMmRecord($value, $field = 'title', $table = 'tx_commerce_categories', $getField = 'uid', $mmtable = ' tx_commerce_products_categories_mm', $localTable = 'tx_commerce_products', $foreignTable = 'tx_commerce_categories') {
+		function lookupForMmRecord($value, $field = 'title', $table = '', $getField = 'uid', $mmtable = '', $localTable = '', $foreignTable = '') {
+			if ('' == $value || '' == $field || '' == $table || '' == $getField  || '' == $mmtable || '' == $localTable || '' == $foreignTable) { return false; }
 			// t3lib_div::debug("Value: $value<br>Field: $field<br>Table: $table<br>getField: $getField");
 			$uid = $this->lookupForRecord($value, $field, $table, $getField);
 
@@ -267,7 +304,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 		 *
 		 * @return integer	The uid which has been found, false otherwise
 		 */
-		function lookupForRecord($value, $field = 'title', $table = 'tx_commerce_products', $getField = 'uid') {
+		function lookupForRecord($value, $field = 'title', $table = '', $getField = 'uid') {
 			if ('' == $value || '' == $field || '' == $table || '' == $getField) { return false; }
 			if (isset($this->cache[$table][$field][$value][$getField])) {
 				return $this->cache[$table][$field][$value][$getField];
@@ -334,19 +371,25 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 						die('Characterset for FILE is unknown in TYPO3, check spelling: '.$c['fileCharset']);
 					}
 
-					// Für jede Datei die hochgeladen wurde, wird diese Schleife durchlaufen
+						// Für jede Datei die hochgeladen wurde, wird diese Schleife durchlaufen
 					foreach ($files as $key => $value) {
-						// Nur ausführen wenn auch wirklich eine Datei im Temp ordner liegt
+							// Nur ausführen wenn auch wirklich eine Datei im Temp ordner liegt
 						if (0 == mb_strlen($value)) {
 							continue;
 						}
 
-						// init für jedes File
+							// init für jedes File
 						$mapper->file = $value;
 						$mapper->init();
 						$mapper->CSV = $mapper->readCSV();
-						// Ändern des getColumnsFromDB
-						$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,dbtitle,dbtable,dbmapping','tx_importmanager_mapping','uid='.$piVars['upload'][$key]['uid'].' AND hidden=0 AND deleted=0');
+							// If CSV-Headers has Newline or tabs, we should ignore them
+							// so it is possible to map suche fields too
+						foreach ($mapper->columnNamesFromCSV as $tmpKey => $columnTitle) {
+							$mapper->columnNamesFromCSV[$tmpKey] = str_replace(array("\n","\t","\r"), array('','',''), $columnTitle);
+						}
+
+							// Ändern des getColumnsFromDB
+						$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,dbtitle,dbtable,dbmapping','tx_importmanager_mapping','uid='.(int)$piVars['upload'][$key]['uid'].' AND hidden=0 AND deleted=0');
 						$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 
 						$map = unserialize($row['dbmapping']);
@@ -355,6 +398,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 						$t3lib_cs->convArray($mapper->columnNamesFromCSV,$c['fileCharset'],$c['dbCharset'], true);
 						$t3lib_cs->convArray($mapper->CSV,$c['fileCharset'],$c['dbCharset'], true);
 						$tmp = $mapper->columnNamesFromCSV;
+
 						$mapper->CSVcolumnToContent = array_flip($tmp);
 						// used to update f.e. mm-relation tables
 						$updateLate = array();
@@ -372,6 +416,50 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 								// Mapping speichern
 								$reg = $map[$key]['Mapping'];
 								switch ($map[$key]['MapType']) {
+									// uid-feld
+									/*
+									case 6: // sapnr,sprache
+
+										Mapping (BE) : "sapnr,sprach"
+										ich muss die beiden felder
+										sapnr und sprache in einem datensatz suchen
+										wenn ich den gefunden hab, nehme ich dessen uid
+										andernfalls keine
+
+										-> uid = sapnr,sprache
+										-> per SQL suchen und setzen falls gefunden,
+										ansonsten uid nicht setzen
+									*/
+									case 6:
+										// multiple lookup
+										// found record which has contentA in columnA and contentb in columnB
+										// take from an "table" the value of "field" where
+										// "fieldA" has the same value as csvA
+										// and "fieldB" as the same value in csvB
+										// table.uid|fieldA:csvA, fieldB: csvB
+										// tx_commerce_products.uid|tx_artikelstammdaten_materialnummersap:MaterialNummer
+										list($lookup, $fields) = t3lib_div::trimExplode('|',$reg,true);
+										list($lookupTable, $lookupField) = t3lib_div::trimExplode('.',$lookup,true);
+
+										$fieldArray = array();
+										foreach (t3lib_div::trimExplode(',',$fields,true) as $fieldConfig) {
+											list($field, $csvField ) = t3lib_div::trimExplode(':', $fieldConfig ,true);
+											// makes possible to use static data instead of
+											// fieldnames
+											if (substr($csvField,0,1) == '"' && substr($csvField,-1,1) == '"') {
+												$fieldArray[] = array($field, substr($csvField,1,-1));
+											} else {
+												$fieldArray[] = array($field, $content[$mapper->CSVcolumnToContent[$csvField]]);
+											}
+
+										}
+										$foundValue = $this->searchRecord($lookupTable, $lookupField, $fieldArray);
+										if ($foundValue) {
+											$v[$counter][$key] = $foundValue;
+										}
+										// $ignoreRecord = true;
+									break;
+
 									// CSV-Feld
 									case 1:
 										# Das htmlspecialchars(*) muss an einer anderen Stelle stehen!
@@ -397,23 +485,40 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 										list($feld, $lookupField, $lookupTable, $returnField) = t3lib_div::trimExplode('|',$reg,true);
 
 										// $v[$counter][$key] =
-// echo "Look up for: ".$content[$mapper->CSVcolumnToContent['Serie']].'<br>';
+										// echo "Look up for: ".$content[$mapper->CSVcolumnToContent['Serie']].'<br>';
 										$foreign = $this->lookupForRecord($content[$mapper->CSVcolumnToContent[$feld]], $lookupField, $lookupTable, $returnField);
 										$v[$counter][$key] = (string)$foreign;
 										// TODO: Diesen Datensatz ignorieren und nicht mehr einlesen
-
 										if (0 == (int)$foreign) { $ignoreRecord = true; }
 									break;
 									// LookUpMMField
 									//
 									// Darf erst hinzugefügt werden, wenn der Datensatz eingefügt
-									// oder geupdated werden, da sonst der Zusammenhang unklar ist
+									// oder geupdated wurde, da sonst der Zusammenhang unklar ist
 									//
 									// Informationen werden in $updateLate gespeichert,
 									// damit dann später entsprechend abgefragt werden kann
+									//
+									// Unterstütz die Möglichkeit, dass mehrere CSV-Felder für eine MM-Relation der
+									// Datenbank steht, d.h. category1, category2, category3 sind Felder in der CSV-Datei
+									// Es sollen nun alle drei Kategorie Felder in der gleichen mm-Tabelle gespeichert werden
+									//
+									//
+									// Syntax:
+									// felder|mm-Tabelle|lookupField|listInsteadCounter|localTable|foreignTable
+									//
+									// felder: CSV-Feldnamen in doppelten Anführungsstrichen, mit Semikolon getrennt, wenn mehrere CSV-Felder einem MM-Feld zugewiesen werden sollen
+									// mm-Tabelle: Tabellenname mit der MM-Relation
+									// lookupField: Tabelle.Feldname in der der CSV-Wert gesucht werden soll
+									// listInsteadCounter: in den meisten MM-Relationen wird in der Lokalentabelle ein
+									//                     Zähler geführt, mit der Anzahl der MM-Relationen, bei commerce z.B. wird dort aber eine Kommagetrennte Liste geführt.
+									//                     1 erstellt eine komma getrennte Liste
+									//                     0 zeigt den Counter der Relationen an
+									// localTable:         Tabellenname der Tabelle in der die Daten eigentlich importiert werden
+									// foreignTable:       Tabellenname der "fremden" Tabelle
 									case 5:
-										// "Katalog 2009Gruppierung1";"Katalog 2009Gruppierung2 ";"Serie"|tx_commerce_products_categories_mm|tx_commerce_categories.title
-										list($felder, $mm, $lookupField, $listInsteadCounter) = t3lib_div::trimExplode('|',$reg,true);
+										// "Katalog 2009Gruppierung1";"Katalog 2009Gruppierung2 ";"Serie"|tx_commerce_products_categories_mm|tx_commerce_categories.title|0|tx_commerce_products|tx_commerce_categories
+										list($felder, $mm, $lookupField, $listInsteadCounter, $localTable, $foreignTable) = t3lib_div::trimExplode('|',$reg,true);
 										list($lookupTable, $lookupField) = t3lib_div::trimExplode('.',$lookupField,true);
 										$felder = t3lib_div::trimExplode(';',$felder,true);
 										$v[$counter][$key] = 0;
@@ -422,18 +527,16 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											if ('"' == substr($fieldName,0,1) && '"' == substr($fieldName,-1,1)) {
 												$fieldName = substr($fieldName,1,-1);
 											}
-											// t3lib_div::debug('Suchen: '.$fieldName);
-// TODO: hartcodierte Tabellen raus!
+											// lookupForMmRecord($value, $field = 'title', $table = 'tx_commerce_categories', $getField = 'uid', $mmtable = ' tx_commerce_products_categories_mm', $localTable = 'tx_commerce_products', $foreignTable = 'tx_commerce_categories')
 											$tmp = $this->lookupForMmRecord(
 													$content[$mapper->CSVcolumnToContent[$fieldName]],
 													$lookupField,
 													$lookupTable,
 													'uid',
 													$mm,
-													'tx_commerce_products',
-													'tx_commerce_categories'
+													$localTable,
+													$foreignTable
 											);
-											// t3lib_div::debug($tmp);
 											// only one could be filled
 											$lookup[] = $tmp['uid_local'].$tmp['uid_foreign'];
 											if ('' != trim($tmp['uid_local'].$tmp['uid_foreign'])) {
@@ -542,6 +645,19 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									$uid = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 									$uid = $uid['uid'];
 								}
+// sorry, quick hack
+/*
+$query = 'SELECT uid FROM tx_commerce_articles WHERE uid_product = '.(int)$uid;
+$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
+$tmp = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+if (!is_array($tmp) || 0 == count($tmp)) {
+	// Artikel anlegen
+	$query = 'INSERT INTO tx_commerce_articles (uid_product, pid, title) VALUES ('.(int)$uid.', 205,"'.$GLOBALS['TYPO3_DB']->quoteStr('Preise', 'tx_commerce_articles').'" ) ';
+	$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
+}
+*/
+
+
 								// t3lib_div::debug($iufields);
 								// t3lib_div::debug($updateLate['mm'][$counter]);
 								if (is_array($updateLate['mm'][$counter])) {
@@ -661,6 +777,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 						<option value="3" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType3').'</option>
 						<option value="4" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType4').'</option>
 						<option value="5" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType5').'</option>
+						<option value="6" style="background:#B8D7F2">'.$LANG->getLL('MappingStep2MapType6').'</option>
 				');
 
 				// Get map if avaible
@@ -696,9 +813,9 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 					$this->doc->table_TABLE.= '<th>'.$_VALUE_.'</th>';
 				}
 				$this->doc->table_TABLE.= '<th>MapType</th><th>Mapping</th></tr>';
-				
+
 				# t3lib_div::debug($_FIELDS_);
-				
+
 				foreach ($_FIELDS_ as $_KEY_ => $_VALUE_) {
 					$_FIELDS_[$_KEY_]['MapType'] = '<select name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][MapType]" id="tx_importmanager-select-'.$_COUNTER_.'" onchange="this.parentNode.parentNode.style.background=this.options[this.selectedIndex].style.background;">'.$_MAPTYPE_.'</select>';
 				if(!empty($row)) {

@@ -40,6 +40,7 @@
 			<label index="MappingStep2MapType3">Text</label>
 			<label index="MappingStep2MapType4">LookupField</label>
 			<label index="MappingStep2MapType5">MM-LookupField</label>
+			<label index="MappingStep2MapType6">SearchForValues</label>
 			<label index="MappingStep2DatabaseTitel">Database Title:</label>
 			<label index="MappingStep2DatabaseDescription">Database Description:</label>
 			<label index="MappingStep2DeleteDescription">If you want to delete the databasetable mapping check the box and click "Save mapping"!</label>
@@ -83,6 +84,9 @@
 			<label index="MappingStep2MapType1">CSV-Feld</label>
 			<label index="MappingStep2MapType2">Funktion</label>
 			<label index="MappingStep2MapType3">Text</label>
+			<label index="MappingStep2MapType4">LookupField</label>
+			<label index="MappingStep2MapType5">MM-LookupField</label>
+			<label index="MappingStep2MapType6">SearchForValues</label>
 			<label index="MappingStep2DatabaseTitel">Datenbank Titel:</label>
 			<label index="MappingStep2DatabaseDescription">Datenbank Beschreibung:</label>
 			<label index="MappingStep2DeleteDescription">Wenn Sie hier das häckchen aktivieren wird das Mapping nach dem klick auf "Mapping speichern" für diese Tabelle gelöscht!</label>
