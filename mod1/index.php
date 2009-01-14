@@ -657,7 +657,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 								}
 								foreach($hookObjectsArr as $hookObj)	{
 									if (method_exists($hookObj, 'beforeUpdateLate')) {
-										$updateLate = $hookObj->beforeUpdateLate($this, $updateLate, $uid, $counter, $iufields);
+										$updateLate = $hookObj->beforeUpdateLate($this, $updateLate, $uid, $counter, $iufields, $row);
 									}
 								}
 
