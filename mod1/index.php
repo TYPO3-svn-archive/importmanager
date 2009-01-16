@@ -386,7 +386,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 							// If CSV-Headers has Newline or tabs, we should ignore them
 							// so it is possible to map suche fields too
 						foreach ($mapper->columnNamesFromCSV as $tmpKey => $columnTitle) {
-							$mapper->columnNamesFromCSV[$tmpKey] = str_replace(array("\n","\t","\r"), array('','',''), $columnTitle);
+							$mapper->columnNamesFromCSV[$tmpKey] = str_replace(array("\n","\t","\r","(",")"), array('','','','',''), $columnTitle);
 						}
 
 							// Ändern des getColumnsFromDB
