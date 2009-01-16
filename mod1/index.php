@@ -826,7 +826,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').selectedIndex='.(($ser_arr[$_KEY_]['MapType'])?$ser_arr[$_KEY_]['MapType']:0).';';
 						$_JS_ .= 'document.getElementById(\'tx_importmanager-select-'.$_COUNTER_.'\').onchange();';
 					}
-					$_FIELDS_[$_KEY_]['Mapping'] = '<input type="text" name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][Mapping]" value="'.$ser_arr[$_KEY_]['Mapping'].'" />';
+					$_FIELDS_[$_KEY_]['Mapping'] = '<input type="text" name="tx_importmanager[MAP]['.$_MAPTABLE_.'][FIELDS]['.$_KEY_.'][Mapping]" value="'.htmlspecialchars($ser_arr[$_KEY_]['Mapping']).'" />';
 					$_COUNTER_++;
 				}
 
