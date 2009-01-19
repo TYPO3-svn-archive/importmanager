@@ -431,13 +431,13 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 										-> per SQL suchen und setzen falls gefunden,
 										ansonsten uid nicht setzen
 									*/
-									case 6:
+									case 6: // SearchForValues
 										// multiple lookup
 										// found record which has contentA in columnA and contentb in columnB
 										// take from an "table" the value of "field" where
 										// "fieldA" has the same value as csvA
 										// and "fieldB" as the same value in csvB
-										// table.uid|fieldA:csvA, fieldB: csvB
+										// table.uid|fieldA:csvA, fieldB: csvB, fieldC:"staticcontent"
 										// tx_commerce_products.uid|tx_artikelstammdaten_materialnummersap:MaterialNummer
 										list($lookup, $fields) = t3lib_div::trimExplode('|',$reg,true);
 										list($lookupTable, $lookupField) = t3lib_div::trimExplode('.',$lookup,true);
