@@ -471,7 +471,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 										switch ($reg) {
 											default:
 												// Erstmal ganz simple
-												$parsed = preg_replace('/\{([^}]*)\}/e','addslashes($content[array_search($1,$mapper->columnNamesFromCSV)])', $reg);
+												$parsed = preg_replace('/\{([^}]*)\}/e','addslashes($content[array_search("$1",$mapper->columnNamesFromCSV)])', $reg);
 												$v[$counter][$key] = (string) eval('return '.$parsed.';'); // or die('eval error: '.$parsed.' | counter: '.$counter.' | key: '.$key);
 											break;
 										}
@@ -631,7 +631,12 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 								if (1 == $affected_rows) {
 									// inserted
 									$uid = $GLOBALS['TYPO3_DB']->sql_insert_id();
+								} elseif(isset($iufields['uid']) &&  (int)substr($iufields['uid'],1,-1) > 0) {
+									// If there is the field "uid" in $iufields with value > 0 we can use that
+									// $iufields['uid'] has "'" around it.
+									$uid = (int)substr($iufields['uid'],1,-1);
 								} else {
+									// t3lib_div::debug($iufields,'$iufields');
 									// We need to look up the updated
 									// record, because there is no possibility to get it
 									// so we create an select query like it was updated/inserted
@@ -645,6 +650,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									$res = $GLOBALS['TYPO3_DB']->sql_query ($query);
 									$uid = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 									$uid = $uid['uid'];
+									// TODO: Debug, if $uid < 1, can happen if mapping is incorrect
 								}
 
 
