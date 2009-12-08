@@ -288,6 +288,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				'uid_foreign' => $uid_foreign,
 				'tablenames' => '',
 			);
+			// @TODO: check if this entry exists - so there is no need to insert it again...
 			return $updateArray;
 		}
 
@@ -538,14 +539,16 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 													$localTable,
 													$foreignTable
 											);
-											// only one could be filled
-											$lookup[] = $tmp['uid_local'].$tmp['uid_foreign'];
-											if ('' != trim($tmp['uid_local'].$tmp['uid_foreign'])) {
-												// if an entry is in more than one field, this should
-												// lead to the same key, so only one relation will be inserted
-												// into db
-												$updateLate['mm'][$counter][$tmp['table']][$tmp['uid_local'].$tmp['uid_foreign']] = $tmp;
-											}
+											// @TODO: what happens if $tmp is false?
+												// only one could be filled
+												$lookup[] = $tmp['uid_local'].$tmp['uid_foreign'];
+												if ('' != trim($tmp['uid_local'].$tmp['uid_foreign'])) {
+													// if an entry is in more than one field, this should
+													// lead to the same key, so only one relation will be inserted
+													// into db
+													$updateLate['mm'][$counter][$tmp['table']][$tmp['uid_local'].$tmp['uid_foreign']] = $tmp;
+												}
+											
 											$v[$counter][$key]++;
 
 										}
@@ -678,7 +681,18 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											// t3lib_div::debug($mmTableValues);
 											unset($mmTableValues['insertInto']);
 											unset($mmTableValues['table']);
-											$GLOBALS['TYPO3_DB']->exec_INSERTquery($mmTable,$mmTableValues);
+											// check first, if this table does not exists - do not update an existing mm-relation
+											// check if there is that relation in there, then
+											// we do not need to update again
+											$where = array(); 
+											foreach ($mmTableValues as $key => $value) {
+												$where[] = ' '.$key.'='.$GLOBALS['TYPO3_DB']->fullQuoteStr($value, $mmTable).' ';
+											}
+											$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*' ,$mmTable,implode(' AND ',$where),'','',1);
+											if (false === $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+												// only insert, if not exists
+												$GLOBALS['TYPO3_DB']->exec_INSERTquery($mmTable,$mmTableValues);
+											}												
 										}
 									}
 								}
