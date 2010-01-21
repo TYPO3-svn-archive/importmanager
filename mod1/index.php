@@ -321,6 +321,15 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 			return $row[$getField];
 		}
 
+		/**
+		 * checks if the column exists in csv
+		 *
+		 * @return boolean returns true if the columnname exists in CSV, otherwise false
+		 */
+		function columnExistsInCSV($fieldname) {
+			return isset($this->CSVcolumnToContent[$fieldname]);
+		}
+		
 
 		/**
 		 * Menu function 1; Build the steps for upload and import.
@@ -407,10 +416,11 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 						$updateLate['mm'] = array(); // MM-Relation Tables
 
 						$counter = 0;
+						// so we can use it in every method
+						$this->CSVcolumnToContent = $mapper->CSVcolumnToContent;
 
 						// Für jede CSV Zeile muss ein import durchgeführt werden
-						foreach ($mapper->CSV as $content) {
-
+						foreach ($mapper->CSV as $content) { 
 							$ignoreRecord = false; // some Records could be ignored by syntaxcheck etc
 							// Für jedes Tabellenfeld wird geschaut welche Mapping Art
 							// und das jeweilige Mapping hinzugefügt.
@@ -464,6 +474,11 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 
 									// CSV-Feld
 									case 1:
+										// check if that column has been defined in the csv file
+										// wenn $map[$key]['Mapping'] nicht in der CSV existiert
+										if (!$this->columnExistsInCSV($reg)) {
+											continue;
+										}
 										# Das htmlspecialchars(*) muss an einer anderen Stelle stehen!
 										$v[$counter][$key] = htmlspecialchars((string) $content[array_search($reg,$mapper->columnNamesFromCSV)]);
 									break;
@@ -471,8 +486,19 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									case 2:
 										switch ($reg) {
 											default:
-												// Erstmal ganz simple
-												$parsed = preg_replace('/\{([^}]*)\}/e','addslashes($content[array_search("$1",$mapper->columnNamesFromCSV)])', $reg);
+												// Hinweis: mitzählen wieviele Ersetzungen es gab ist nicht hilfreich, weil eine ggf. nich vorhandene Spalte darin vorkommen könnte
+												// daher gibt es die extra Suche nach den Feldern												
+												$countMatches = preg_match_all('/\{([^}]*)\}/e',$reg,$matches);
+												if ($countMatches > 0 ) {
+													for ($i = 0; $i < $countMatches; $i++) {
+														if (!$this->columnExistsInCSV($matches[1][$i])) {
+															//t3lib_div::debug($countMatches.' Felder gefunden wobei '.$matches[1][$i]. ' nicht existiert.','columnExistsInCSV'.$i);
+															continue 2;
+														}
+													}
+												}
+												// array_search("$1",$mapper->columnNamesFromCSV) returns false - which would be converted to 0 so we have to check it 
+												$parsed = preg_replace('/\{([^}]*)\}/e','addslashes($content[array_search("$1",$mapper->columnNamesFromCSV)])', $reg);									
 												$v[$counter][$key] = (string) eval('return '.$parsed.';'); // or die('eval error: '.$parsed.' | counter: '.$counter.' | key: '.$key);
 											break;
 										}
@@ -485,7 +511,10 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									case 4:
 										// Syntax
 										list($feld, $lookupField, $lookupTable, $returnField) = t3lib_div::trimExplode('|',$reg,true);
-
+										
+										if (!$this->columnExistsInCSV($feld)) {
+											continue;
+										}
 										// $v[$counter][$key] =
 										// echo "Look up for: ".$content[$mapper->CSVcolumnToContent['Serie']].'<br>';
 										$foreign = $this->lookupForRecord($content[$mapper->CSVcolumnToContent[$feld]], $lookupField, $lookupTable, $returnField);
@@ -529,6 +558,10 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											if ('"' == substr($fieldName,0,1) && '"' == substr($fieldName,-1,1)) {
 												$fieldName = substr($fieldName,1,-1);
 											}
+											if (!$this->columnExistsInCSV($fieldName)) {
+												continue 2;
+											}
+											
 											// lookupForMmRecord($value, $field = 'title', $table = 'tx_commerce_categories', $getField = 'uid', $mmtable = ' tx_commerce_products_categories_mm', $localTable = 'tx_commerce_products', $foreignTable = 'tx_commerce_categories')
 											$tmp = $this->lookupForMmRecord(
 													$content[$mapper->CSVcolumnToContent[$fieldName]],
