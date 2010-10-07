@@ -241,7 +241,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				$lookupTable,
 				implode(' AND ',$query));
 			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-			if (0 == count($row)) {
+			if (false === $row || 0 == count($row)) {
 				return false;
 			}
 			return $row[$lookupField];
