@@ -88,6 +88,7 @@ class tx_importmanager_csvtemplate extends t3lib_svbase  {
 				$CSV_COLUMNS = array();
 				$dbmapping = unserialize($row['dbmapping']);
 				foreach($dbmapping as $VALUE) {
+					// @TODO: alle anderen Mapping-Types auch ausgeben
 					if($VALUE['MapType']==1 && in_array($c['fieldEncaps'].$VALUE['Mapping'].$c['fieldEncaps'],$CSV_COLUMNS)==false) {
 						 $CSV_COLUMNS[] = $c['fieldEncaps'].$VALUE['Mapping'].$c['fieldEncaps'];
 					}
