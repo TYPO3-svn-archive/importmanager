@@ -480,7 +480,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 											continue;
 										}
 										# Das htmlspecialchars(*) muss an einer anderen Stelle stehen!
-										$v[$counter][$key] = htmlspecialchars((string) $content[array_search($reg,$mapper->columnNamesFromCSV)]);
+										$v[$counter][$key] = (string) $content[array_search($reg,$mapper->columnNamesFromCSV)];
 									break;
 									// Funktion
 									case 2:
