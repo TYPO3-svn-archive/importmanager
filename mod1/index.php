@@ -618,7 +618,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 									$k=FALSE;
 									foreach ($v as $fields) {
 										$where[$dbKey['Column_name']].= ($k==TRUE)?',':'';
-										$where[$dbKey['Column_name']].= '"'.$fields[$dbKey['Column_name']].'"';
+										$where[$dbKey['Column_name']].= '"'.$GLOBALS['TYPO3_DB']->quoteStr($fields[$dbKey['Column_name']], $row['dbtable']).'"';
 										$k=TRUE;
 									}
 									$where[$dbKey['Column_name']].= ') ';
