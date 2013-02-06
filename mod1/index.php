@@ -234,7 +234,7 @@ class  tx_importmanager_module1 extends t3lib_SCbase {
 				// tx_artikelstammdaten_materialnummersap:MaterialNummer
 				$query[] = $GLOBALS['TYPO3_DB']->quoteStr($config[0], $lookupTable).'="'.$GLOBALS['TYPO3_DB']->quoteStr($config[1], $lookupTable).'"';
 			}
-			$query[] = 'hidden = 0';
+			// $query[] = 'hidden = 0';
 			$query[] = 'deleted=0';
 
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($GLOBALS['TYPO3_DB']->quoteStr($lookupField, $lookupTable),
